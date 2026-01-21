@@ -1,0 +1,28 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZeroOneMk1/PPMap.git"
+  },
+  "author": "ZeroOne_Mk1",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZeroOneMk1/PPMap/issues"
+  },
+  "homepage": "https://github.com/ZeroOneMk1/PPMap#readme",
+  "description": "",
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
