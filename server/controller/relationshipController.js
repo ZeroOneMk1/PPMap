@@ -132,3 +132,82 @@ export const createRelationshipAsPerson = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const joinRelationshipAsPerson = async (req, res) => {
+    try {
+        const { token, relationshipUUID } = req.body
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        const { UUID } = decoded
+
+        const requestingPerson = await person.findOne({ UUID })
+
+        if (!requestingPerson) {
+            return res.status(404).json({ message: "Person not found" })
+        }
+
+        const rel = await relationship.findOne({ UUID: relationshipUUID })
+
+        if (!rel) {
+            return res.status(404).json({ message: "Relationship not found" })
+        }
+
+        if (rel.persons[1] !== null) {
+            return res.status(400).json({ message: "Relationship is already full" })
+        }
+
+        if (rel.persons[0] === UUID) {
+            return res.status(400).json({ message: "Cannot join your own relationship" })
+        }
+
+        rel.persons[1] = UUID
+        await rel.save()
+
+        // Add the relationship to the requesting person's relationships
+        requestingPerson.relationships.push(rel.UUID)
+        await requestingPerson.save()
+
+        res.status(200).json(rel)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const endRelationshipAsPerson = async (req, res) => {
+    try {
+        const { token, relationshipUUID } = req.body
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        const { UUID } = decoded
+
+        const requestingPerson = await person.findOne({ UUID })
+
+        if (!requestingPerson) {
+            return res.status(404).json({ message: "Person not found" })
+        }
+
+        const rel = await relationship.findOne({ UUID: relationshipUUID })
+
+        if (!rel) {
+            return res.status(404).json({ message: "Relationship not found" })
+        }
+
+        if (!rel.persons.includes(UUID)) {
+            return res.status(403).json({ message: "You are not part of this relationship" })
+        }
+
+        // Remove the relationship from both persons
+        for (const personUUID of rel.persons) {
+            const p = await person.findOne({ UUID: personUUID })
+            if (p) {
+                p.relationships = p.relationships.filter(rUUID => rUUID !== relationshipUUID)
+                await p.save()
+            }
+        }
+
+        // Delete the relationship
+        await relationship.deleteOne({ UUID: relationshipUUID })
+
+        res.status(200).json({ message: "Relationship ended successfully" })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
