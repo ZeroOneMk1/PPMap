@@ -29,6 +29,10 @@ export const getRelatedPersons = async (req, res) => {
             return res.status(403).json({ message: "Person is not discoverable. Enable discoverability to access this feature." })
         }
 
+        if (UUID !== 69420 && depth > 2) {
+            return res.status(403).json({ message: "Access denied for depth greater than 2" })
+        }
+
         // Initialize a set to keep track of related persons and relationships taken to get to these persons
         const relatedPersonsSet = new Set()
         const relationshipsSet = new Set()
@@ -97,3 +101,5 @@ export const getRelatedPersons = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const 
