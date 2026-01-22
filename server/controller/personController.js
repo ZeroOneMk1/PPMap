@@ -171,48 +171,6 @@ export const updatePersonPassword = async (req, res) => {
     }
 }
 
-export const addNewRelationshipToPerson = async (req, res) => {
-    try {
-        const { token, relationshipUUID } = req.body
-        const decoded = jwt.verify(token, process.env.JWT_SECRET)
-        const { UUID } = decoded
-        const updatedPerson = await person.findOneAndUpdate(
-            { UUID },
-            { $addToSet: { relationships: relationshipUUID } },
-            { new: true }
-        )
-
-        if (!updatedPerson) {
-            return res.status(404).json({ message: "Person not found" })
-        }
-
-        res.status(200).json({ ...updatedPerson.toObject(), password: undefined })
-    } catch (error) {
-        res.status(500).json({ message: error.message })
-    }
-}
-
-export const removeRelationshipFromPerson = async (req, res) => {
-    try {
-        const { token, relationshipUUID } = req.body
-        const decoded = jwt.verify(token, process.env.JWT_SECRET)
-        const { UUID } = decoded
-        const updatedPerson = await person.findOneAndUpdate(
-            { UUID },
-            { $pull: { relationships: relationshipUUID } },
-            { new: true }
-        )
-
-        if (!updatedPerson) {
-            return res.status(404).json({ message: "Person not found" })
-        }
-
-        res.status(200).json({ ...updatedPerson.toObject(), password: undefined })
-    } catch (error) {
-        res.status(500).json({ message: error.message })
-    }
-}
-
 export const toggleDiscoverability = async (req, res) => {
     try {
         const { token, discoverable } = req.body
