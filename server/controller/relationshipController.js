@@ -211,3 +211,77 @@ export const endRelationshipAsPerson = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const editRelationshipAsPerson = async (req, res) => {
+    try {
+        const { token, relationshipUUID, romantic, sexual } = req.body
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        const { UUID } = decoded
+
+        const requestingPerson = await person.findOne({ UUID })
+
+        if (!requestingPerson) {
+            return res.status(404).json({ message: "Person not found" })
+        }
+
+        const rel = await relationship.findOne({ UUID: relationshipUUID })
+
+        if (!rel) {
+            return res.status(404).json({ message: "Relationship not found" })
+        }
+
+        if (!rel.persons.includes(UUID)) {
+            return res.status(403).json({ message: "You are not part of this relationship" })
+        }
+
+        // Update relationship details
+        if (romantic !== undefined) rel.romantic = romantic
+        if (sexual !== undefined) rel.sexual = sexual
+        rel.time_updated = new Date()
+
+        await rel.save()
+
+        res.status(200).json(rel)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const deleteAllInvalidRelationships = async (req, res) => {
+    // go through all relationships and make sure each one does not contain a nonexistent UUID
+    try {
+        const persons = await person.find()
+        const existingUUIDs = new Set(persons.map(p => p.UUID))
+
+        const relationships = await relationship.find()
+
+        for (const rel of relationships) {
+            let shouldDelete = false
+            for (const personUUID of rel.persons) {
+                if (!personUUID) {
+                    break
+                }
+                if (!existingUUIDs.has(personUUID)) {
+                    shouldDelete = true
+                    break
+                }
+            }
+            if (shouldDelete) {
+                // Remove this relationship from all persons who have it
+                for (const personUUID of rel.persons) {
+                    const p = await person.findOne({ UUID: personUUID })
+                    if (p) {
+                        p.relationships = p.relationships.filter(rUUID => rUUID !== rel.UUID)
+                        await p.save()
+                    }
+                }
+                // Delete the relationship
+                await relationship.deleteOne({ UUID: rel.UUID })
+            }
+        }
+
+        res.status(200).json({ message: "Cleaned up relationships with nonexistent persons" })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
