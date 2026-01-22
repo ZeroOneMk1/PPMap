@@ -45,17 +45,13 @@ export const getRelatedPersons = async (req, res) => {
             for (const relationshipUUID of currentPerson.relationships) {
                 const rel = await relationship.findOne({ UUID: relationshipUUID })
                 if (!rel || (mustberomantic && !rel.romantic) || (mustbesexual && !rel.sexual)) continue
-                
+
                 // Find the person who the current person is in a relationship with
                 for (const personUUID of rel.persons) {
                     if (personUUID && personUUID !== currentPersonUUID && !relatedPersonsSet.has(personUUID)) {
                         // Check if the person is discoverable
-                        if (personUUID) {
-                            const relatedPerson = await person.findOne({ UUID: personUUID })
-                            if (relatedPerson && relatedPerson.discoverable === false) {
-                                continue // Skip non-discoverable persons
-                            }
-                        }
+                        const relatedPerson = await person.findOne({ UUID: personUUID })
+                        if (relatedPerson && relatedPerson.discoverable === false) continue
                         // Add the related person UUID to the set and add the relationship too
                         relatedPersonsSet.add(personUUID)
                         relationshipsSet.add(rel.UUID)
@@ -66,7 +62,6 @@ export const getRelatedPersons = async (req, res) => {
             }
         }
 
-        // TODO do later: Create an adjacency matrix to represent relationships between persons
         await findRelatedPersons(UUID, 1)
 
         // Convert sets to arrays for creation of the matrix
