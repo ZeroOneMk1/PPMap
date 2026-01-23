@@ -259,6 +259,10 @@ export const deleteAllInvalidRelationships = async (req, res) => {
             let shouldDelete = false
             for (const personUUID of rel.persons) {
                 if (!personUUID) {
+                    const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+                    if (rel.time_created < twoWeeksAgo) {
+                        shouldDelete = true
+                    }
                     break
                 }
                 if (!existingUUIDs.has(personUUID)) {
