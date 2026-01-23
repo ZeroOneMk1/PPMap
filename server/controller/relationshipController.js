@@ -265,6 +265,11 @@ export const deleteAllInvalidRelationships = async (req, res) => {
                     shouldDelete = true
                     break
                 }
+                const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+                if (rel.time_created < oneYearAgo) {
+                    shouldDelete = true
+                    break
+                }
             }
             if (shouldDelete) {
                 // Remove this relationship from all persons who have it
