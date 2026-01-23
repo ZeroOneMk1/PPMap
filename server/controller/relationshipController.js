@@ -4,11 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-// This Controller should handle finding persons from relationships with the one making the request
-// It will parse through the person's relationships, find the mours, and create an adjacency matrix based on who's in a relationship with whom
-// This will also work for finding metamours, where the step goes one layer deeper
-// Maybe make the request take a depth parameter to indicate how deep the search should go?
-
 export const getRelatedPersons = async (req, res) => {
     try {
         const { token, depth, mustberomantic, mustbesexual } = req.body
@@ -290,6 +285,33 @@ export const deleteAllInvalidRelationships = async (req, res) => {
         }
 
         res.status(200).json({ message: "Cleaned up relationships with nonexistent persons" })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const getPendingRelationships = async (req, res) => {
+    try {
+        const { token } = req.body
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        const { UUID } = decoded
+
+        const requestingPerson = await person.findOne({ UUID })
+
+        if (!requestingPerson) {
+            return res.status(404).json({ message: "Person not found" })
+        }
+
+        const pendingRelationships = []
+
+        for (const relationshipUUID of requestingPerson.relationships) {
+            const rel = await relationship.findOne({ UUID: relationshipUUID })
+            if (rel && rel.persons.includes(UUID) && rel.persons.includes(null)) {
+                pendingRelationships.push(rel)
+            }
+        }
+
+        res.status(200).json(pendingRelationships)
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
