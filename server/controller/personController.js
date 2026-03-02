@@ -3,6 +3,24 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+// helper to pull token from various request shapes
+function extractToken(req) {
+    let token;
+    if (req.body) {
+        if (typeof req.body === 'string') {
+            // might be urlencoded like "token=..."
+            const m = req.body.match(/token=(.*)/);
+            if (m) token = m[1];
+        } else if (req.body.token) {
+            token = req.body.token;
+        }
+    }
+    if (!token && req.query) {
+        token = req.query.token;
+    }
+    return token;
+}
+
 const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
 export const createPerson = async (req, res) => {
@@ -80,7 +98,7 @@ export const loginPerson = async (req, res) => {
 }
 
 export const getAllPersons = async (req, res) => {
-    const { token } = req.body;
+    const token = extractToken(req);
 
     if (!token) {
         return res.status(401).json({ message: "Token is required" });
@@ -104,7 +122,7 @@ export const getAllPersons = async (req, res) => {
 
 export const getPersonByToken = async (req, res) => {
     try {
-        const { token } = req.body
+        const token = extractToken(req);
         
         if (!token) {
             return res.status(401).json({ message: "Token is required" })

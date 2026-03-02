@@ -4,9 +4,33 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+// simple token extractor (similar to personController helper)
+function extractToken(req) {
+    let token;
+    if (req.body) {
+        if (typeof req.body === 'string') {
+            const m = req.body.match(/token=(.*)/);
+            if (m) token = m[1];
+        } else if (req.body.token) {
+            token = req.body.token;
+        }
+    }
+    if (!token && req.query) {
+        token = req.query.token;
+    }
+    return token;
+}
+
 export const getRelatedPersons = async (req, res) => {
     try {
-        const { token, depth, mustberomantic, mustbesexual } = req.body
+        const token = extractToken(req);
+        const depth = req.body?.depth ?? req.query?.depth;
+        const mustberomantic = req.body?.mustberomantic ?? req.query?.mustberomantic;
+        const mustbesexual = req.body?.mustbesexual ?? req.query?.mustbesexual;
+
+        if (!token) {
+            return res.status(401).json({ message: "Token is required" });
+        }
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         const { UUID } = decoded
 
@@ -122,7 +146,9 @@ export const createRelationshipAsPerson = async (req, res) => {
         requestingPerson.relationships.push(savedRelationship.UUID)
         await requestingPerson.save()
 
-        res.status(201).json(savedRelationship)
+        const responseObj = savedRelationship.toObject();
+        responseObj.joinUrl = `http://localhost:3000/join-relationship/${savedRelationship.UUID}`;
+        res.status(201).json(responseObj)
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -292,7 +318,10 @@ export const deleteAllInvalidRelationships = async (req, res) => {
 
 export const getPendingRelationships = async (req, res) => {
     try {
-        const { token } = req.body
+        const token = extractToken(req);
+        if (!token) {
+            return res.status(401).json({ message: "Token is required" });
+        }
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         const { UUID } = decoded
 
@@ -307,7 +336,9 @@ export const getPendingRelationships = async (req, res) => {
         for (const relationshipUUID of requestingPerson.relationships) {
             const rel = await relationship.findOne({ UUID: relationshipUUID })
             if (rel && rel.persons.includes(UUID) && rel.persons.includes(null)) {
-                pendingRelationships.push(rel)
+                const relObj = rel.toObject();
+                relObj.joinUrl = `http://localhost:3000/join-relationship/${rel.UUID}`;
+                pendingRelationships.push(relObj)
             }
         }
 
