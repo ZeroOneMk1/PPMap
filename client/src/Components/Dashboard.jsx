@@ -53,13 +53,6 @@ export default function Dashboard() {
         </div>
     );
 
-    const handleGetPending = async () => {
-        console.log("Fetching pending relationships...");
-        const res = await api.getPendingRelationships();
-        console.log(res);
-        setPendingLinks(res);
-    };
-
     const copyToClipboard = async (uuid, link) => {
         await navigator.clipboard.writeText(link);
         setCopiedUUID(uuid);
@@ -89,7 +82,6 @@ export default function Dashboard() {
     const [directRelationships, setDirectRelationships] = useState([]);
 
     // link hanlding
-    const [pendingLinks, setPendingLinks] = useState([]);
     const [copiedUUID, setCopiedUUID] = useState(null);
 
     // load degree-1 relationships for the table
@@ -226,11 +218,53 @@ export default function Dashboard() {
                         <tbody>
                             {directRelationships.map((rel) => (
                                 <tr key={rel.relationshipUUID}>
-                                    <td>{rel.otherNickname}</td>
+                                    <td>
+                                        {rel.otherNickname ? (
+                                            rel.otherNickname
+                                        ) : (
+                                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                                <span
+                                                    style={{
+                                                        background: "#eee",
+                                                        padding: "4px 8px",
+                                                        borderRadius: "6px",
+                                                        fontSize: "0.9em"
+                                                    }}
+                                                >
+                                                    Pending Invite
+                                                </span>
+
+                                                <button
+                                                    style={{
+                                                        color: "#1976d2",
+                                                        background: "none",
+                                                        border: "none",
+                                                        cursor: "pointer",
+                                                        fontWeight: "bold"
+                                                    }}
+                                                    onClick={() =>
+                                                        copyToClipboard(
+                                                            rel.relationshipUUID,
+                                                            `http://localhost:3000/join-relationship/${rel.relationshipUUID}`
+                                                        )
+                                                    }
+                                                >
+                                                    📋 Copy Link
+                                                </button>
+
+                                                {copiedUUID === rel.relationshipUUID && (
+                                                    <span style={{ color: "green", fontSize: "0.9em" }}>
+                                                        Copied!
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td>
                                         <input
                                             type="checkbox"
                                             checked={rel.romantic}
+                                            disabled={!rel.otherNickname}
                                             onChange={async (e) => {
                                                 const newVal = e.target.checked;
                                                 await api.editRelationship({
@@ -245,6 +279,7 @@ export default function Dashboard() {
                                         <input
                                             type="checkbox"
                                             checked={rel.sexual}
+                                            disabled={!rel.otherNickname}
                                             onChange={async (e) => {
                                                 const newVal = e.target.checked;
                                                 await api.editRelationship({
@@ -369,37 +404,6 @@ export default function Dashboard() {
                         </table>
                     </div>
                 )}
-            </div>
-
-            <div className="section">
-                <h3>Get pending relationship links</h3>
-
-                <button type="button" onClick={handleGetPending}>
-                    Get Pending
-                </button>
-
-                <div className="links">
-                    {pendingLinks.map((rel) => (
-                        <div key={rel.UUID} className="linkRow">
-                            <span
-                                style={{
-                                    cursor: "pointer",
-                                    color: "blue",
-                                    textDecoration: "underline"
-                                }}
-                                onClick={() => copyToClipboard(rel.UUID, rel.joinUrl)}
-                            >
-                                {rel.joinUrl}
-                            </span>
-
-                            {copiedUUID === rel.UUID && (
-                                <span style={{ marginLeft: "10px", color: "green" }}>
-                                    Copied!
-                                </span>
-                            )}
-                        </div>
-                    ))}
-                </div>
             </div>
 
             {renderSection(
