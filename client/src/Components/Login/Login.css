@@ -68,3 +68,10 @@
 .matrix td.empty {
   background-color: #d3d3d3;
 }
+.linkRow {
+  margin-top: 6px;
+}
+
+.linkRow span:hover {
+  opacity: 0.8;
+}
