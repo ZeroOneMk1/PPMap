@@ -256,12 +256,23 @@ export const joinRelationshipAsPerson = async (req, res) => {
             return res.status(400).json({ message: "Cannot join your own relationship" })
         }
 
+        // If you already have a different unique relationship with that person, don't join
+        const relationships_arr = requestingPerson.relationships;
+        const relationships_dict = await relationship.find({ UUID: { $in: relationships_arr } })
+        for (const curr_relationships of relationships_dict) {
+            if (curr_relationships.persons.includes(UUID) && curr_relationships.UUID !== relationshipUUID) {
+                return res.status(400).json({ message: "You already have a relationship with that person" })
+            }
+        }
+
         rel.persons[1] = UUID
         await rel.save()
 
         // Add the relationship to the requesting person's relationships
-        requestingPerson.relationships.push(rel.UUID)
-        await requestingPerson.save()
+        await person.updateOne(
+        { UUID },
+        { $addToSet: { relationships: rel.UUID } }
+        )
 
         res.status(200).json(rel)
     } catch (error) {
@@ -345,16 +356,20 @@ export const editRelationshipAsPerson = async (req, res) => {
 }
 
 export const deleteAllInvalidRelationships = async (req, res) => {
-    // go through all relationships and make sure each one does not contain a nonexistent UUID
     try {
         const persons = await person.find()
         const existingUUIDs = new Set(persons.map(p => p.UUID))
 
         const relationships = await relationship.find()
+        console.log(`[DEBUG] ${relationships} relationships`)
 
+        // go through all relationships
+        const uniqueRelationshipPairs = new Set()
         for (const rel of relationships) {
             let shouldDelete = false
+            // Checking person-based conditions (null person, nonexistent person)
             for (const personUUID of rel.persons) {
+                // If the relationship has been pending for two weeks, delete it.
                 if (!personUUID) {
                     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
                     if (rel.time_created < twoWeeksAgo) {
@@ -362,16 +377,25 @@ export const deleteAllInvalidRelationships = async (req, res) => {
                     }
                     break
                 }
+                // If the relationship has a person that doesn't exist anymore, delete it.
                 if (!existingUUIDs.has(personUUID)) {
                     shouldDelete = true
                     break
                 }
-                const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
-                if (rel.time_created < oneYearAgo) {
-                    shouldDelete = true
-                    break
-                }
             }
+            // If the relationship is older than a year, delete it.
+            const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+            if (rel.time_created < oneYearAgo) {
+                shouldDelete = true
+                break
+            }
+            // If the relationship between the two people already exists
+            if (uniqueRelationshipPairs.has(rel.persons.sort().join('-'))) {
+                shouldDelete = true
+            } else if (!shouldDelete) {
+                uniqueRelationshipPairs.add(rel.persons.sort().join('-'))
+            }
+            // Remove relationships from database
             if (shouldDelete) {
                 // Remove this relationship from all persons who have it
                 for (const personUUID of rel.persons) {
@@ -386,7 +410,34 @@ export const deleteAllInvalidRelationships = async (req, res) => {
             }
         }
 
-        res.status(200).json({ message: "Cleaned up relationships with nonexistent persons" })
+        // go through all people
+        for (const person of persons) {
+            // Remove duplicate relationships in the relationships array
+            const uniqueRelationships = []
+            for (const curr_relationship of person.relationships) {
+                console.log(`[DEBUG] Checking relationship ${curr_relationship} for person ${person.UUID}`)
+                if (!uniqueRelationships.includes(curr_relationship)) {
+                    console.log(`[DEBUG] Adding relationship ${curr_relationship} for person ${person.UUID}`)
+                    uniqueRelationships.push(curr_relationship)
+                }else{
+                    console.log(`[DEBUG] Skipping relationship ${curr_relationship} for person ${person.UUID}`)
+                }
+            }
+            person.relationships = uniqueRelationships
+            console.log(`[DEBUG] Unique relationships for ${person.UUID}:`, uniqueRelationships)
+            // Remove any relationships that don't exist anymore
+            for (const curr_relationship of person.relationships) {
+                // if the current relationship is not in relationships (declared above) delete it from the array
+                if (!relationships.some(r => r.UUID === curr_relationship)) {
+                    console.log(`[DEBUG] Removing relationship ${curr_relationship} from person ${person.UUID}`)
+                    person.relationships = person.relationships.filter(r => r !== curr_relationship)
+                }
+            }
+            console.log(`[DEBUG] Unique relationships for ${person.UUID}:`, uniqueRelationships)
+            await person.save()
+        }
+
+        res.status(200).json({ message: "Cleaned up relationships with nonexistent persons, and duplicate relationships in people." })
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

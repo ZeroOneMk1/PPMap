@@ -114,14 +114,6 @@ export default function Dashboard() {
       <button onClick={logout}>Logout</button>
       <p className="message">{message}</p>
 
-
-      {isAdmin && renderSection(
-        "Get all persons (admin)",
-        [],
-        api.getAllPersons,
-        "Get All"
-      )}
-
       {renderSection(
         "Rename me",
         [
@@ -262,16 +254,6 @@ export default function Dashboard() {
         )}
       </div>
 
-
-
-
-      {renderSection(
-        "Clean invalid relationships",
-        [],
-        api.cleanRelationships,
-        "Clean"
-      )}
-
       {/* Custom Get related persons section */}
       <div className="section">
         <h3>Get related persons</h3>
@@ -374,6 +356,20 @@ export default function Dashboard() {
         [],
         api.getPendingRelationships,
         "Get Pending"
+      )}
+
+      {renderSection(
+        "Clean invalid relationships",
+        [],
+        api.cleanRelationships,
+        "Clean"
+      )}
+
+      {isAdmin && renderSection(
+        "Get all persons (admin)",
+        [],
+        api.getAllPersons,
+        "Get All"
       )}
 
       <pre className="result">{JSON.stringify(result, null, 2)}</pre>
