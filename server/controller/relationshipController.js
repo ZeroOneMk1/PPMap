@@ -260,7 +260,7 @@ export const joinRelationshipAsPerson = async (req, res) => {
         const relationships_arr = requestingPerson.relationships;
         const relationships_dict = await relationship.find({ UUID: { $in: relationships_arr } })
         for (const curr_relationships of relationships_dict) {
-            if (curr_relationships.persons.includes(UUID) && curr_relationships.UUID !== relationshipUUID) {
+            if (curr_relationships.persons.includes(UUID) && curr_relationships.persons.includes(rel.persons[0]) && curr_relationships.UUID !== relationshipUUID) {
                 return res.status(400).json({ message: "You already have a relationship with that person" })
             }
         }
