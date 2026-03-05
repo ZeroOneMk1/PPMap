@@ -63,56 +63,41 @@ export const getRelatedPersons = async (req, res) => {
 
         // Helper function to recursively find related persons
         const findRelatedPersons = async (currentPersonUUID, currentDepth) => {
-            console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `findRelatedPersons called: UUID=${currentPersonUUID}, depth=${currentDepth}, maxDepth=${depth}`);
             if (currentDepth > depth) {
-                console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Depth exceeded: ${currentDepth} > ${depth}, returning`);
                 return;
             }
 
             // Find the current person
             const currentPerson = await person.findOne({ UUID: currentPersonUUID })
             if (!currentPerson) {
-                console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Person not found: ${currentPersonUUID}`);
                 return;
             }
-            console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Found person: ${currentPerson.nickname}, relationships: ${currentPerson.relationships.length}`);
 
             // Iterate through each relationship of the current person
             for (const relationshipUUID of currentPerson.relationships) {
-                console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Checking relationship: ${relationshipUUID}`);
                 const rel = await relationship.findOne({ UUID: relationshipUUID })
                 if (!rel) {
-                    console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Relationship not found: ${relationshipUUID}`);
                     continue;
                 }
-                console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Relationship found - romantic: ${rel.romantic}, sexual: ${rel.sexual}`);
                 if ((mustberomantic && !rel.romantic) || (mustbesexual && !rel.sexual)) {
-                    console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Skipping: filters don't match (mustRomantic=${mustberomantic}, relRomantic=${rel.romantic}, mustSexual=${mustbesexual}, relSexual=${rel.sexual})`);
                     continue;
                 }
 
                 // Find the person who the current person is in a relationship with
                 for (const personUUID of rel.persons) {
-                    console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Checking person in relationship: ${personUUID}`);
                     if (personUUID && personUUID !== currentPersonUUID && !relatedPersonsSet.has(personUUID)) {
                         // Check if the person is discoverable
                         const relatedPerson = await person.findOne({ UUID: personUUID })
                         if (relatedPerson && relatedPerson.discoverable === false) {
-                            console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Skipping undiscoverable person: ${relatedPerson.nickname}`);
                             continue;
                         }
-                        console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Adding person: ${relatedPerson?.nickname || personUUID}`);
                         // Add the related person UUID to the set and add the relationship too
                         relatedPersonsSet.add(personUUID)
                         relationshipsSet.add(rel.UUID)
                         // Recursively find related persons for the next depth level
-                        console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Recursing into: ${personUUID}`);
                         await findRelatedPersons(personUUID, currentDepth + 1)
                     } else {
-                        if (!personUUID) console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Skipping null person`);
-                        if (personUUID === currentPersonUUID) console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Skipping self: ${personUUID}`);
                         if (relatedPersonsSet.has(personUUID)){
-                            console.log(`[DEBUG] ` + `    `.repeat(currentDepth-1) + `Already in set: ${personUUID}. Not Recursing.`);
                             relationshipsSet.add(rel.UUID)
                         }
                     }
@@ -125,16 +110,13 @@ export const getRelatedPersons = async (req, res) => {
         // Convert sets to arrays for creation of the matrix
         const relatedPersons = Array.from(relatedPersonsSet)
         const relationships = Array.from(relationshipsSet)
-        console.log(`[DEBUG] Building matrix: ${relatedPersons.length} persons, ${relationships.length} relationships`);
 
         // Create the 2D Matrix of Persons
         const matrix = []
         for (const personUUID of relatedPersons) {
-            console.log(`[DEBUG] Processing person: ${personUUID}`);
             const row = []
             for (const otherPersonUUID of relatedPersons) {
                 if (personUUID === otherPersonUUID) {
-                    console.log(`[DEBUG]   Self-relationship: ${personUUID} -> ${otherPersonUUID}, value=0`);
                     row.push(0)
                 } else {
                     // Check if there's a relationship between these two persons
@@ -142,20 +124,15 @@ export const getRelatedPersons = async (req, res) => {
                     for (const relUUID of relationships) {
                         const rel = await relationship.findOne({ UUID: relUUID })
                         if (rel && rel.persons.includes(personUUID) && rel.persons.includes(otherPersonUUID)) {
-                            console.log(`[DEBUG]   Found relationship: ${personUUID} <-> ${otherPersonUUID} (${relUUID}), value=1`);
                             isRelated = true
                             break
                         }
-                    }
-                    if (!isRelated) {
-                        console.log(`[DEBUG]   No relationship: ${personUUID} <-> ${otherPersonUUID}, value=0`);
                     }
                     row.push(isRelated ? 1 : 0)
                 }
             }
             matrix.push(row)
         }
-        console.log(`[DEBUG] Matrix complete: ${matrix.length}x${matrix[0]?.length || 0}`);
 
         // build a UUID to nickname mapping for matrix labels
         const nicknameMap = {};
@@ -361,7 +338,6 @@ export const deleteAllInvalidRelationships = async (req, res) => {
         const existingUUIDs = new Set(persons.map(p => p.UUID))
 
         const relationships = await relationship.find()
-        console.log(`[DEBUG] ${relationships} relationships`)
 
         // go through all relationships
         const uniqueRelationshipPairs = new Set()
@@ -415,25 +391,19 @@ export const deleteAllInvalidRelationships = async (req, res) => {
             // Remove duplicate relationships in the relationships array
             const uniqueRelationships = []
             for (const curr_relationship of person.relationships) {
-                console.log(`[DEBUG] Checking relationship ${curr_relationship} for person ${person.UUID}`)
                 if (!uniqueRelationships.includes(curr_relationship)) {
-                    console.log(`[DEBUG] Adding relationship ${curr_relationship} for person ${person.UUID}`)
                     uniqueRelationships.push(curr_relationship)
                 }else{
-                    console.log(`[DEBUG] Skipping relationship ${curr_relationship} for person ${person.UUID}`)
                 }
             }
             person.relationships = uniqueRelationships
-            console.log(`[DEBUG] Unique relationships for ${person.UUID}:`, uniqueRelationships)
             // Remove any relationships that don't exist anymore
             for (const curr_relationship of person.relationships) {
                 // if the current relationship is not in relationships (declared above) delete it from the array
                 if (!relationships.some(r => r.UUID === curr_relationship)) {
-                    console.log(`[DEBUG] Removing relationship ${curr_relationship} from person ${person.UUID}`)
                     person.relationships = person.relationships.filter(r => r !== curr_relationship)
                 }
             }
-            console.log(`[DEBUG] Unique relationships for ${person.UUID}:`, uniqueRelationships)
             await person.save()
         }
 
