@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import "../../common.css";
+import "./RelationshipGraph.css";
 
 export default function RelationshipGraph({ matrixData, matrixLabels }) {
     const svgRef = useRef(null);
@@ -9,9 +11,9 @@ export default function RelationshipGraph({ matrixData, matrixLabels }) {
     const draggedNodeIndex = useRef(null);
 
     // Physics Constants (Adjusted for per-second scaling)
-    const REPULSION = 100000; 
-    const ATTRACTION = 0.002;   
-    const CENTER_FORCE = 0.1; 
+    const REPULSION = 100000;
+    const ATTRACTION = 0.002;
+    const CENTER_FORCE = 0.1;
     const DAMPING = 0.0003;      // Friction as a loss-per-second
 
     useEffect(() => {
@@ -22,7 +24,7 @@ export default function RelationshipGraph({ matrixData, matrixLabels }) {
             y: 250 + (Math.random() - 0.5) * 100,
             vx: 0,
             vy: 0,
-            isDragging: false 
+            isDragging: false
         }));
 
         const newLinks = [];
@@ -40,7 +42,7 @@ export default function RelationshipGraph({ matrixData, matrixLabels }) {
 
     const handleMouseDown = (index) => {
         draggedNodeIndex.current = index;
-        setNodes(prev => prev.map((n, i) => 
+        setNodes(prev => prev.map((n, i) =>
             i === index ? { ...n, isDragging: true, vx: 0, vy: 0 } : n
         ));
     };
@@ -55,7 +57,7 @@ export default function RelationshipGraph({ matrixData, matrixLabels }) {
 
         setNodes(prev => {
             if (!prev[draggedNodeIndex.current]) return prev;
-            return prev.map((n, i) => 
+            return prev.map((n, i) =>
                 i === draggedNodeIndex.current ? { ...n, x: mouseX, y: mouseY, vx: 0, vy: 0 } : n
             );
         });
@@ -65,7 +67,7 @@ export default function RelationshipGraph({ matrixData, matrixLabels }) {
         if (draggedNodeIndex.current !== null) {
             const indexToRelease = draggedNodeIndex.current;
             draggedNodeIndex.current = null;
-            setNodes(prev => prev.map((n, i) => 
+            setNodes(prev => prev.map((n, i) =>
                 i === indexToRelease ? { ...n, isDragging: false } : n
             ));
         }
@@ -116,7 +118,7 @@ export default function RelationshipGraph({ matrixData, matrixLabels }) {
                     // Center gravity
                     n.vx += (centerX - n.x) * CENTER_FORCE * dt;
                     n.vy += (centerY - n.y) * CENTER_FORCE * dt;
-                    
+
                     // Apply damping (v = v * damping^dt)
                     n.vx *= Math.pow(DAMPING, dt);
                     n.vy *= Math.pow(DAMPING, dt);
@@ -138,20 +140,33 @@ export default function RelationshipGraph({ matrixData, matrixLabels }) {
 
     return (
         <div className="graph-box" style={{ width: '500px', height: '500px', background: '#fff' }}>
-            <svg 
-                ref={svgRef} 
+            <svg
+                ref={svgRef}
                 width="100%" height="100%"
-                onMouseMove={handleMouseMove} 
-                onMouseUp={handleMouseUp} 
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
             >
                 {links.map((link, i) => (
                     <line key={i} x1={nodes[link.source]?.x} y1={nodes[link.source]?.y} x2={nodes[link.target]?.x} y2={nodes[link.target]?.y} stroke="#ddd" strokeWidth="2" />
                 ))}
                 {nodes.map((node, i) => (
-                    <g key={i} transform={`translate(${node.x || 0},${node.y || 0})`} onMouseDown={() => handleMouseDown(i)} style={{ cursor: 'grab' }}>
-                        <circle r="15" fill={i === 0 ? "#facc15" : "#6366f1"} stroke={i === 0 ? "#ca8a04" : "#4f46e5"} strokeWidth="2" />
-                        <text dy="25" textAnchor="middle" style={{ fontSize: '12px', userSelect: 'none', pointerEvents: 'none' }}>{node.label}</text>
+                    <g
+                        key={i}
+                        transform={`translate(${node.x || 0},${node.y || 0})`}
+                        onMouseDown={() => handleMouseDown(i)}
+                    >
+                        <circle
+                            r="15"
+                            className={i === 0 ? "graph-node-main" : "graph-node"}
+                        />
+                        <text
+                            dy="25"
+                            textAnchor="middle"
+                            className="node-label"
+                        >
+                            {node.label}
+                        </text>
                     </g>
                 ))}
             </svg>

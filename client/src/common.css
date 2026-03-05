@@ -1,0 +1,29 @@
+.section {
+  margin-bottom: 16px;
+}
+
+.section input {
+  display: block;
+  margin: 4px 0;
+  padding: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.section button {
+  margin-top: 8px;
+  padding: 8px 12px;
+}
+
+.message {
+  color: red;
+}
+
+.result {
+  text-align: left;
+  background: #f4f4f4;
+  padding: 8px;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow: auto;
+}

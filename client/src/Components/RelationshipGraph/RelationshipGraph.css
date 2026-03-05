@@ -1,0 +1,44 @@
+.graph-box {
+    margin-top: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* The Yellow Node (User) */
+.graph-node-main {
+    fill: #facc15;
+    stroke: #ca8a04;
+    stroke-width: 2px;
+    transition: fill 0.2s;
+    cursor: grab;
+}
+
+.graph-node-main:hover {
+    fill: #eab308; /* Slightly deeper yellow */
+}
+
+/* Regular Nodes */
+.graph-node {
+    fill: #6366f1;
+    stroke: #4f46e5;
+    stroke-width: 2px;
+    transition: fill 0.2s;
+    cursor: grab;
+}
+
+.graph-node:hover {
+    fill: #4338ca; /* Slightly deeper indigo */
+}
+
+/* Label text styles */
+.node-label {
+    font-size: 12px;
+    user-select: none;
+    pointer-events: none;
+    fill: #333;
+    font-weight: 500;
+}

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import * as api from "../api";
+import * as api from "../../api";
+import "../../common.css";
+import "./JoinRelationship.css";
 
 export default function JoinRelationship() {
   const { uuid } = useParams();

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import * as api from "../api";
-import "./Login/Login.css"; // reuse same styles
-import RelationshipGraph from "./RelationshipGraph";
+import * as api from "../../api";
+import "../../common.css"; // reuse same styles
+import "./Dashboard.css"; // reuse same styles
+import RelationshipGraph from "../RelationshipGraph/RelationshipGraph";
 
 // helper to decode JWT payload
 function decodeToken(token) {

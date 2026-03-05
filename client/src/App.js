@@ -1,8 +1,8 @@
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './Components/Login/Login';
-import Dashboard from './Components/Dashboard';
-import JoinRelationship from './Components/JoinRelationship';
+import Dashboard from './Components/Dashboard/Dashboard';
+import JoinRelationship from './Components/JoinRelationship/JoinRelationship';
 
 function App() {
   return (

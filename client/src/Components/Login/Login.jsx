@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as api from "../../api";
 import "./Login.css";
+import "../../common.css";
 
 export default function Login() {
   const [nickname, setNickname] = useState("");
