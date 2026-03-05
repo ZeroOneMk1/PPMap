@@ -78,3 +78,21 @@
 button:hover {
   opacity: 0.8;
 }
+.graph-box {
+    margin-top: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.graph-node {
+    transition: fill 0.2s;
+    cursor: pointer;
+}
+
+.graph-node:hover {
+    fill: #4f46e5; /* A slightly darker indigo on hover */
+}

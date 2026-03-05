@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import * as api from "../api";
 import "./Login/Login.css"; // reuse same styles
+import RelationshipGraph from "./RelationshipGraph";
 
 // helper to decode JWT payload
 function decodeToken(token) {
@@ -371,38 +372,16 @@ export default function Dashboard() {
             </div>
 
             {/* relationship matrix visualization */}
+            {/* New relationship graph visualization */}
             <div className="section">
-                <h3>Relationship Matrix</h3>
+                <h3>Relationship Graph</h3>
                 {matrixData.length === 0 ? (
                     <p>No data&nbsp;(run lookup with depth≥1)</p>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="matrix">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    {matrixLabels.map((name, i) => (
-                                        <th key={i} className="rotate">
-                                            <div>{name}</div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {matrixData.map((row, i) => (
-                                    <tr key={i}>
-                                        <th>{matrixLabels[i]}</th>
-                                        {row.map((val, j) => (
-                                            <td
-                                                key={j}
-                                                className={val === 1 ? 'filled' : 'empty'}
-                                            ></td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <RelationshipGraph
+                        matrixData={matrixData}
+                        matrixLabels={matrixLabels}
+                    />
                 )}
             </div>
 

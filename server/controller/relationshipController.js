@@ -406,10 +406,17 @@ export const deleteAllInvalidRelationships = async (req, res) => {
             }
             await person.save()
         }
-
-        res.status(200).json({ message: "Cleaned up relationships with nonexistent persons, and duplicate relationships in people." })
+        if (res){
+            res.status(200).json({ message: "Cleaned up relationships with nonexistent persons, and duplicate relationships in people." })
+        }else{
+            console.log("Cleanup completed successfully.")
+        }
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        if (res){
+            res.status(500).json({ message: error.message })
+        }else{
+            console.log(error)
+        }
     }
 }
 
