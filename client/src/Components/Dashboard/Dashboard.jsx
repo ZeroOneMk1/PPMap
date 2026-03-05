@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import * as api from "../../api";
 import "../../common.css"; // reuse same styles
-import "./Dashboard.css"; // reuse same styles
+import "./Dashboard.css";
 import RelationshipGraph from "../RelationshipGraph/RelationshipGraph";
 
 // helper to decode JWT payload
@@ -14,7 +14,7 @@ function decodeToken(token) {
         return null;
     }
 }
-
+// This is the primary page for the user dashboard, where relationship adding, managing, and viewing is handled.
 export default function Dashboard() {
     const [message, setMessage] = useState("");
     const [result, setResult] = useState(null);
@@ -385,22 +385,6 @@ export default function Dashboard() {
                     />
                 )}
             </div>
-
-            {renderSection(
-                "Clean invalid relationships",
-                [],
-                api.cleanRelationships,
-                "Clean"
-            )}
-
-            {isAdmin && renderSection(
-                "Get all persons (admin)",
-                [],
-                api.getAllPersons,
-                "Get All"
-            )}
-
-            <pre className="result">{JSON.stringify(result, null, 2)}</pre>
         </div>
     );
 }

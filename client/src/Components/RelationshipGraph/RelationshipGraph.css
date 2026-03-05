@@ -10,9 +10,9 @@
 
 /* The Yellow Node (User) */
 .graph-node-main {
-    fill: #facc15;
+    fill: #fcbf00;
     stroke: #ca8a04;
-    stroke-width: 2px;
+    stroke-width: 1px;
     transition: fill 0.2s;
     cursor: grab;
 }
@@ -23,15 +23,15 @@
 
 /* Regular Nodes */
 .graph-node {
-    fill: #6366f1;
-    stroke: #4f46e5;
-    stroke-width: 2px;
+    fill: #009fe3;
+    stroke: #0161ab;
+    stroke-width: 1px;
     transition: fill 0.2s;
     cursor: grab;
 }
 
 .graph-node:hover {
-    fill: #4338ca; /* Slightly deeper indigo */
+    fill: #0a6ebb; /* Slightly deeper indigo */
 }
 
 /* Label text styles */
