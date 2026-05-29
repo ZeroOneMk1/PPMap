@@ -1,44 +1,67 @@
-.graph-box {
-    margin-top: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* The Yellow Node (User) */
-.graph-node-main {
-    fill: #fcbf00;
-    stroke: #ca8a04;
-    stroke-width: 1px;
-    transition: fill 0.2s;
+.graph-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #fff;
+    touch-action: none;
     cursor: grab;
 }
 
-.graph-node-main:hover {
-    fill: #eab308; /* Slightly deeper yellow */
+.graph-svg:active {
+    cursor: grabbing;
 }
 
-/* Regular Nodes */
+.graph-node-main {
+    fill: #fcbf00;
+    stroke: #ca8a04;
+    stroke-width: 1.5px;
+    transition: fill 0.2s;
+}
+
+.graph-node-main:hover {
+    fill: #eab308;
+}
+
+/* Applied alongside .graph-node-main when the user is not discoverable.
+   Same yellow fill so self is still distinguishable, but a dashed outline
+   echoes the look of pending edges as a "you are not visible" cue. */
+.graph-node-main-hidden {
+    stroke-width: 2.5px;
+    stroke-dasharray: 6, 4;
+}
+
 .graph-node {
     fill: #009fe3;
     stroke: #0161ab;
     stroke-width: 1px;
     transition: fill 0.2s;
-    cursor: grab;
 }
 
 .graph-node:hover {
-    fill: #0a6ebb; /* Slightly deeper indigo */
+    fill: #0a6ebb;
 }
 
-/* Label text styles */
+.graph-node-pending {
+    fill: #fff;
+    stroke: #888;
+    stroke-width: 1.5px;
+    stroke-dasharray: 4, 3;
+}
+
+.graph-node-pending:hover {
+    fill: #f3f3f3;
+}
+
+.graph-node-anon {
+    fill: #b8b8b8;
+    stroke: #777;
+    stroke-width: 1px;
+}
+
 .node-label {
-    font-size: 12px;
+    font-size: 13px;
     user-select: none;
-    pointer-events: none;
     fill: #333;
     font-weight: 500;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }

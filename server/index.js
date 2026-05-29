@@ -2,21 +2,39 @@ import express from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import cron from "node-cron"; // 1. Import node-cron
 import peopleRouter from "./routes/personRoute.js";
 import relationshipsRouter from "./routes/relationshipRoute.js";
 // Assuming this is the function that performs the cleanup
-import { deleteAllInvalidRelationships } from "./controller/relationshipController.js"; 
+import { deleteAllInvalidRelationships } from "./controller/relationshipController.js";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 
-// provide a fallback secret so jwt.sign always has a value
-process.env.JWT_SECRET = process.env.JWT_SECRET || "defaultsecret";
+// In production, trust the X-Forwarded-Proto header from a single reverse proxy
+// (so req.secure and the rate limiter's IP detection work correctly), and bounce
+// any plain-HTTP request to HTTPS.
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+    app.use((req, res, next) => {
+        if (req.secure) return next();
+        return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    });
+}
+
+app.use(helmet());
+app.use(cors({ origin: CLIENT_ORIGIN, credentials: true }));
+app.use(bodyParser.json());
+app.use(cookieParser());
+
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    throw new Error("JWT_SECRET must be set and at least 32 characters long");
+}
 
 const PORT = process.env.PORT || 8000;
 const MONGODB_URL = process.env.MONGODB_URL || "mongodb://localhost:27017/PPMapDB";

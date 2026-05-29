@@ -12,17 +12,15 @@ export default function JoinRelationship() {
   useEffect(() => {
     const join = async () => {
       try {
-        const token = api.getTokenCookie();
-        if (!token) {
-          setStatus("No token found. Please log in first.");
-          setTimeout(() => navigate("/"), 3000);
-          return;
-        }
-
         await api.joinRelationship({ relationshipUUID: uuid });
         setStatus("Successfully joined! Redirecting...");
         setTimeout(() => navigate("/dashboard"), 1500);
       } catch (err) {
+        if (err?.message === "Not authenticated") {
+          setStatus("Please log in first.");
+          setTimeout(() => navigate("/"), 2000);
+          return;
+        }
         setStatus(`Error: ${err.message || JSON.stringify(err)}`);
         setTimeout(() => navigate("/dashboard"), 3000);
       }

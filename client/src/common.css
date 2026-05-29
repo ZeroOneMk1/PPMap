@@ -1,3 +1,11 @@
+:root{
+    --color-white: #FFFFFF;
+    --color-gold: #fcbf00;
+    --color-blue: #009fe3;
+    --color-red: #e50051;
+    --color-purple: #340c46;
+}
+
 .section {
   margin-bottom: 16px;
 }
@@ -16,12 +24,12 @@
 }
 
 .message {
-  color: red;
+  color: var(--color-red);
 }
 
 .result {
   text-align: left;
-  background: #f4f4f4;
+  background: var(--color-purple);
   padding: 8px;
   white-space: pre-wrap;
   max-height: 200px;

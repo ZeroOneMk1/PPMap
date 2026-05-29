@@ -1,5 +1,6 @@
 body {
-  background-color: aliceblue;
+  color: var(--color-purple);
+  background-color: var(--color-white);
 }
 
 .App {
