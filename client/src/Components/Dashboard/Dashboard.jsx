@@ -45,7 +45,14 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustB
             // Keep the direct node even when the edge is filtered out, so the wider
             // graph can still map this partner's ephemeral ID back to a known handle.
             const label = getLabel(rel.otherHandle) || rel.otherHandle;
-            nodes.push({ id: nodeId, type: "direct", label, handle: rel.otherHandle });
+            nodes.push({
+                id: nodeId,
+                type: "direct",
+                label,
+                handle: rel.otherHandle,
+                romantic: rel.romantic,
+                sexual: rel.sexual,
+            });
             directNodeByHandle.set(rel.otherHandle, nodeId);
         } else if (matches) {
             // Pending node only exists as an anchor for the dashed edge; drop it with the edge.
@@ -81,6 +88,7 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustB
             }
         }
         for (const [a, b, romantic, sexual] of graphEdges) {
+            if (!passesFilter({ romantic, sexual })) continue;
             const aId = idMap.get(a);
             const bId = idMap.get(b);
             if (!aId || !bId) continue;
@@ -91,7 +99,157 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustB
         }
     }
 
-    return { nodes, edges };
+    // Drop nodes with no displayed edges (except self) so isolated nodes don't
+    // drift across the canvas when filters remove their connections.
+    const used = new Set();
+    for (const e of edges) { used.add(e.source); used.add(e.target); }
+    const visibleNodes = nodes.filter(n => n.id === "self" || used.has(n.id));
+
+    return { nodes: visibleNodes, edges };
+}
+
+// Stats are computed against the unfiltered polycule so the numbers stay stable
+// when the user toggles the Romantic/Sexual filter.
+function computePolyculeStats({ directRels, graphData, discoverable }) {
+    let people = 1; // self
+    const edges = []; // {romantic, sexual}
+    const degree = new Map();
+    const adj = new Map();
+
+    const addEdge = (a, b, rel) => {
+        edges.push(rel);
+        degree.set(a, (degree.get(a) || 0) + 1);
+        degree.set(b, (degree.get(b) || 0) + 1);
+        if (!adj.has(a)) adj.set(a, []);
+        if (!adj.has(b)) adj.set(b, []);
+        adj.get(a).push(b);
+        adj.get(b).push(a);
+    };
+
+    if (discoverable && graphData) {
+        people = graphData.nodeCount;
+        for (const [a, b, romantic, sexual] of graphData.edges) {
+            addEdge(a, b, { romantic, sexual });
+        }
+        // Pending direct relationships never appear in the wider graph; attach
+        // each to a phantom partner so they participate in degree/leaf/diameter.
+        const selfId = graphData.selfNodeId;
+        let pendingIdx = 0;
+        for (const rel of directRels) {
+            if (!rel.otherHandle) {
+                addEdge(selfId, `pending-${pendingIdx++}`, { romantic: rel.romantic, sexual: rel.sexual });
+                people += 1;
+            }
+        }
+    } else {
+        // Without discoverable access we only see the direct ring.
+        directRels.forEach((rel, i) => {
+            addEdge("self", `partner-${i}`, { romantic: rel.romantic, sexual: rel.sexual });
+            people += 1;
+        });
+    }
+
+    const E = edges.length;
+    const N = people;
+    let both = 0, romanticOnly = 0, sexualOnly = 0, neither = 0;
+    for (const e of edges) {
+        if (e.romantic && e.sexual) both += 1;
+        else if (e.romantic) romanticOnly += 1;
+        else if (e.sexual) sexualOnly += 1;
+        else neither += 1;
+    }
+    const pct = (n) => (E > 0 ? n / E : 0);
+
+    let leafCount = 0;
+    for (const d of degree.values()) {
+        if (d === 1) leafCount += 1;
+    }
+
+    // Graph diameter: BFS from each node, track the deepest level reached.
+    let diameter = 0;
+    for (const start of adj.keys()) {
+        const dist = new Map([[start, 0]]);
+        const queue = [start];
+        let head = 0;
+        while (head < queue.length) {
+            const cur = queue[head++];
+            const d = dist.get(cur);
+            for (const next of adj.get(cur)) {
+                if (dist.has(next)) continue;
+                dist.set(next, d + 1);
+                queue.push(next);
+                if (d + 1 > diameter) diameter = d + 1;
+            }
+        }
+    }
+
+    return {
+        people: N,
+        relationships: E,
+        density: N > 1 ? (2 * E) / (N * (N - 1)) : 0,
+        avgPartners: N > 0 ? (2 * E) / N : 0,
+        maxPartners: degree.size > 0 ? Math.max(0, ...degree.values()) : 0,
+        leafCount,
+        diameter,
+        types: {
+            both: { count: both, pct: pct(both) },
+            romanticOnly: { count: romanticOnly, pct: pct(romanticOnly) },
+            sexualOnly: { count: sexualOnly, pct: pct(sexualOnly) },
+            neither: { count: neither, pct: pct(neither) },
+        },
+    };
+}
+
+function StatsPanel({ stats, discoverable }) {
+    const fmtPct = (v) => `${Math.round(v * 100)}%`;
+    return (
+        <div className="stats-panel">
+            <div className="stats-title">Polycule stats</div>
+            <div className="stats-grid">
+                <span>People</span><strong>{stats.people}</strong>
+                <span>Relationships</span><strong>{stats.relationships}</strong>
+                {stats.people > 1 && <>
+                    <span title="Fraction of all possible pairs that share a relationship.">Density</span>
+                    <strong>{fmtPct(stats.density)}</strong>
+                    <span title="Mean number of partners per person.">Avg partners</span>
+                    <strong>{stats.avgPartners.toFixed(1)}</strong>
+                    <span title="People who are in exactly one relationship.">Leaf members</span>
+                    <strong>{stats.leafCount}</strong>
+                    <span title="Longest shortest path between any two members.">Max separation</span>
+                    <strong>{stats.diameter}</strong>
+                    <span title="Highest partner count in the polycule.">Most partners</span>
+                    <strong>{stats.maxPartners}</strong>
+                </>}
+            </div>
+            <div className="stats-divider" />
+            <div className="stats-subtitle">Types</div>
+            <div className="stats-types">
+                <div className="stats-type-row">
+                    <span className="stats-swatch" style={{ background: "#340c46" }} />
+                    <span className="stats-type-label">Romantic + sexual</span>
+                    <strong>{stats.types.both.count} <span className="stats-pct">({fmtPct(stats.types.both.pct)})</span></strong>
+                </div>
+                <div className="stats-type-row">
+                    <span className="stats-swatch" style={{ background: "#009fe3" }} />
+                    <span className="stats-type-label">Romantic only</span>
+                    <strong>{stats.types.romanticOnly.count} <span className="stats-pct">({fmtPct(stats.types.romanticOnly.pct)})</span></strong>
+                </div>
+                <div className="stats-type-row">
+                    <span className="stats-swatch" style={{ background: "#e50051" }} />
+                    <span className="stats-type-label">Sexual only</span>
+                    <strong>{stats.types.sexualOnly.count} <span className="stats-pct">({fmtPct(stats.types.sexualOnly.pct)})</span></strong>
+                </div>
+                <div className="stats-type-row">
+                    <span className="stats-swatch" style={{ background: "#888" }} />
+                    <span className="stats-type-label">Neither</span>
+                    <strong>{stats.types.neither.count} <span className="stats-pct">({fmtPct(stats.types.neither.pct)})</span></strong>
+                </div>
+            </div>
+            {!discoverable && (
+                <div className="stats-note">Only direct relationships are visible. Enable discoverable to include the wider graph.</div>
+            )}
+        </div>
+    );
 }
 
 export default function Dashboard() {
@@ -99,6 +257,9 @@ export default function Dashboard() {
     const [selfHandle, setSelfHandle] = useState("");
     const [discoverable, setDiscoverable] = useState(false);
     const [directRels, setDirectRels] = useState([]);
+    // Wider graph is fetched unfiltered; the Romantic/Sexual filter is applied
+    // client-side. This keeps filter toggles instant and avoids the flicker that
+    // happened when display showed old filtered data while a refetch was in flight.
     const [graphData, setGraphData] = useState(null);
     const [openModal, setOpenModal] = useState(null); // null | "self" | { type: "edge", rel }
     const [createOpen, setCreateOpen] = useState(false);
@@ -134,12 +295,9 @@ export default function Dashboard() {
         }
     }, []);
 
-    const loadGraph = useCallback(async (opts = {}) => {
+    const loadGraph = useCallback(async () => {
         try {
-            const g = await api.getRelationshipGraph({
-                mustberomantic: opts.romantic ?? false,
-                mustbesexual: opts.sexual ?? false,
-            });
+            const g = await api.getRelationshipGraph({ mustberomantic: false, mustbesexual: false });
             setGraphData(g);
         } catch (err) {
             // 403 here is expected when discoverable is off. Silently clear.
@@ -149,9 +307,9 @@ export default function Dashboard() {
 
     const loadAll = useCallback(async (isDiscoverable) => {
         await loadDirect();
-        if (isDiscoverable) await loadGraph({ romantic: filterRomantic, sexual: filterSexual });
+        if (isDiscoverable) await loadGraph();
         else setGraphData(null);
-    }, [loadDirect, loadGraph, filterRomantic, filterSexual]);
+    }, [loadDirect, loadGraph]);
 
     useEffect(() => {
         api.getPersonByToken()
@@ -166,14 +324,8 @@ export default function Dashboard() {
                 loadAll(d);
             })
             .catch(() => navigate("/"));
-        // loadAll closes over the filter state; we only want this to run once on mount.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [navigate]);
-
-    // Refetch the wider graph when filters change (only if discoverable).
-    useEffect(() => {
-        if (discoverable) loadGraph({ romantic: filterRomantic, sexual: filterSexual });
-    }, [filterRomantic, filterSexual, discoverable, loadGraph]);
 
     const { nodes, edges } = useMemo(
         () => buildGraphData({
@@ -186,6 +338,11 @@ export default function Dashboard() {
         }),
         // labelVersion is included so saved local labels propagate to the graph.
         [selfHandle, directRels, graphData, discoverable, labelVersion, filterRomantic, filterSexual]
+    );
+
+    const stats = useMemo(
+        () => computePolyculeStats({ directRels, graphData, discoverable }),
+        [directRels, graphData, discoverable]
     );
 
     const showToast = (msg) => {
@@ -202,6 +359,7 @@ export default function Dashboard() {
         try {
             await api.createRelationship({ romantic, sexual });
             await loadDirect();
+            if (discoverable) await loadGraph();
             setCreateOpen(false);
             showToast("Pending relationship created. Click the dashed edge to copy the join link.");
         } catch (err) {
@@ -272,6 +430,10 @@ export default function Dashboard() {
                 </button>
             </div>
 
+            <div className="floating bottom-left">
+                <StatsPanel stats={stats} discoverable={discoverable} />
+            </div>
+
             {!discoverable && rootSize.w > 0 && (
                 <div
                     className="subtle"
@@ -315,7 +477,7 @@ export default function Dashboard() {
                         try {
                             await api.toggleDiscoverability({ discoverable: val });
                             setDiscoverable(val);
-                            if (val) await loadGraph({ romantic: filterRomantic, sexual: filterSexual });
+                            if (val) await loadGraph();
                             else setGraphData(null);
                             showToast(val ? "Discoverable on. Loading wider graph." : "Discoverable off.");
                         } catch (err) {
@@ -345,7 +507,10 @@ export default function Dashboard() {
                 <EdgeMenu
                     rel={openModal.rel}
                     onClose={() => setOpenModal(null)}
-                    onChange={async () => { await loadDirect(); if (discoverable) await loadGraph(); }}
+                    onChange={async () => {
+                        await loadDirect();
+                        if (discoverable) await loadGraph();
+                    }}
                     onLabelSaved={() => { setLabelVersion(v => v + 1); showToast("Label saved locally."); }}
                 />
             )}

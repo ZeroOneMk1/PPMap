@@ -240,3 +240,91 @@ input[type="text"], input[type="password"] {
     border-radius: 4px;
     font-size: 0.95em;
 }
+
+.stats-panel {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.85em;
+    color: #333;
+    width: 240px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.stats-title {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+}
+
+.stats-subtitle {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    row-gap: 4px;
+    column-gap: 12px;
+}
+
+.stats-grid strong {
+    font-weight: 600;
+    color: #222;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.stats-divider {
+    height: 1px;
+    background: #eee;
+    margin: 10px 0 8px;
+}
+
+.stats-types {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stats-type-row {
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    align-items: center;
+    column-gap: 8px;
+}
+
+.stats-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.stats-type-label {
+    color: #444;
+}
+
+.stats-type-row strong {
+    font-weight: 600;
+    color: #222;
+    font-variant-numeric: tabular-nums;
+}
+
+.stats-pct {
+    font-weight: 400;
+    color: #777;
+}
+
+.stats-note {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    color: #666;
+    font-size: 0.85em;
+    line-height: 1.4;
+}

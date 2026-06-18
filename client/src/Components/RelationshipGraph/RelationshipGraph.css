@@ -34,11 +34,11 @@
     fill: #009fe3;
     stroke: #0161ab;
     stroke-width: 1px;
-    transition: fill 0.2s;
+    transition: filter 0.2s;
 }
 
 .graph-node:hover {
-    fill: #0a6ebb;
+    filter: brightness(0.82);
 }
 
 .graph-node-pending {

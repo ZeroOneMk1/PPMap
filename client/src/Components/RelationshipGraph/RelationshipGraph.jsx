@@ -5,9 +5,9 @@ import "./RelationshipGraph.css";
 // Edge colour encodes the romantic/sexual flag combination so the user
 // can analyse behaviour without any node identity being revealed.
 function edgeColour(romantic, sexual) {
-    if (romantic && sexual) return "#c0392b";
-    if (romantic) return "#e67e22";
-    if (sexual) return "#2980b9";
+    if (romantic && sexual) return "#340c46";
+    if (romantic) return "#009fe3";
+    if (sexual) return "#e50051";
     return "#888";
 }
 
@@ -354,12 +354,20 @@ export default function RelationshipGraph({
                 const isSelf = node.type === "self";
                 const isPending = node.type === "pending";
                 const isAnon = node.type === "anon";
+                const isDirect = node.type === "direct";
                 const radius = isSelf ? 28 : (isAnon ? 14 : 20);
                 const className =
                     isSelf ? (node.hidden ? "graph-node-main graph-node-main-hidden" : "graph-node-main") :
                     isPending ? "graph-node-pending" :
                     isAnon ? "graph-node-anon" :
                     "graph-node";
+                let circleStyle;
+                if (node.hidden) {
+                    circleStyle = { fill: "url(#hidden-self-stripes)" };
+                } else if (isDirect) {
+                    const c = edgeColour(node.romantic, node.sexual);
+                    circleStyle = { fill: c, stroke: c };
+                }
                 return (
                     <g
                         key={i}
@@ -371,7 +379,7 @@ export default function RelationshipGraph({
                         <circle
                             r={radius}
                             className={className}
-                            style={node.hidden ? { fill: "url(#hidden-self-stripes)" } : undefined}
+                            style={circleStyle}
                         />
                         {node.label && (
                             <text
