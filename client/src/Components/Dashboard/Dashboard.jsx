@@ -24,7 +24,7 @@ function Modal({ onClose, children, title }) {
     );
 }
 
-function buildGraphData({ selfHandle, directRels, graphData, discoverable }) {
+function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustBeRomantic, mustBeSexual }) {
     const nodes = [];
     const edges = [];
 
@@ -35,16 +35,23 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable }) {
         hidden: !discoverable,
     });
 
+    const passesFilter = (rel) => !(mustBeRomantic && !rel.romantic) && !(mustBeSexual && !rel.sexual);
+
     const directNodeByHandle = new Map();
     for (const rel of directRels) {
         const nodeId = `direct:${rel.relationshipUUID}`;
+        const matches = passesFilter(rel);
         if (rel.otherHandle) {
+            // Keep the direct node even when the edge is filtered out, so the wider
+            // graph can still map this partner's ephemeral ID back to a known handle.
             const label = getLabel(rel.otherHandle) || rel.otherHandle;
             nodes.push({ id: nodeId, type: "direct", label, handle: rel.otherHandle });
             directNodeByHandle.set(rel.otherHandle, nodeId);
-        } else {
+        } else if (matches) {
+            // Pending node only exists as an anchor for the dashed edge; drop it with the edge.
             nodes.push({ id: nodeId, type: "pending", label: "pending" });
         }
+        if (!matches) continue;
         edges.push({
             source: "self",
             target: nodeId,
@@ -169,9 +176,16 @@ export default function Dashboard() {
     }, [filterRomantic, filterSexual, discoverable, loadGraph]);
 
     const { nodes, edges } = useMemo(
-        () => buildGraphData({ selfHandle, directRels, graphData, discoverable }),
+        () => buildGraphData({
+            selfHandle,
+            directRels,
+            graphData,
+            discoverable,
+            mustBeRomantic: filterRomantic,
+            mustBeSexual: filterSexual,
+        }),
         // labelVersion is included so saved local labels propagate to the graph.
-        [selfHandle, directRels, graphData, discoverable, labelVersion]
+        [selfHandle, directRels, graphData, discoverable, labelVersion, filterRomantic, filterSexual]
     );
 
     const showToast = (msg) => {
