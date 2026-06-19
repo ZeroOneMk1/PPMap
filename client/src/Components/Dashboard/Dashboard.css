@@ -220,6 +220,28 @@
     font-size: 0.95em;
 }
 
+.join-message-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f4f4f4;
+    padding: 10px 12px;
+    border-radius: 4px;
+}
+
+.join-message-block code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #222;
+}
+
+.join-message-block button {
+    align-self: flex-start;
+}
+
 .row {
     display: flex;
     gap: 8px;

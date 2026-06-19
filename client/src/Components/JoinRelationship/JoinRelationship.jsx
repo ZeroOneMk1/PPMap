@@ -30,7 +30,21 @@ export default function JoinRelationship() {
   }, [uuid, navigate]);
 
   return (
-    <div style={{ textAlign: "center", padding: "40px" }}>
+    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "40px 20px", textAlign: "center" }}>
+      <p
+        style={{
+          fontSize: "0.95em",
+          lineHeight: 1.5,
+          color: "#555",
+          padding: "12px 14px",
+          background: "#f4f8fb",
+          borderLeft: "3px solid #009fe3",
+          margin: "0 0 24px 0",
+          textAlign: "left",
+        }}
+      >
+        PPMap is a private map of romantic and sexual relationships. Someone shared this link to add you as their partner. Once you join, you can edit or end the relationship from your dashboard.
+      </p>
       <h2>{status}</h2>
     </div>
   );

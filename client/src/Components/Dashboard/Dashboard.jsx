@@ -373,6 +373,16 @@ export default function Dashboard() {
         if (rel) setOpenModal({ type: "edge", rel });
     };
 
+    const handleNodeClick = (node) => {
+        if (!node) return;
+        if (node.type !== "direct" && node.type !== "pending") return;
+        const prefix = "direct:";
+        if (!node.id?.startsWith(prefix)) return;
+        const uuid = node.id.slice(prefix.length);
+        const rel = directRels.find(r => r.relationshipUUID === uuid);
+        if (rel) setOpenModal({ type: "edge", rel });
+    };
+
     // Convert the self node's viewBox position (500, 500) to screen pixels.
     // Matches the SVG's preserveAspectRatio="xMidYMid meet" layout.
     const ballScreen = useMemo(() => {
@@ -464,6 +474,7 @@ export default function Dashboard() {
                 edges={edges}
                 onSelfClick={() => setOpenModal("self")}
                 onEdgeClick={handleEdgeClick}
+                onNodeClick={handleNodeClick}
                 viewport={viewport}
                 onViewportChange={setViewport}
             />
@@ -619,6 +630,7 @@ function SelfMenu({ handle, discoverable, onClose, onDiscoverableChange, onLabel
 function EdgeMenu({ rel, onClose, onChange, onLabelSaved }) {
     const isPending = !rel.otherHandle;
     const joinUrl = `${window.location.origin}/join-relationship/${rel.relationshipUUID}`;
+    const joinMessage = `PPMap is a private map of romantic and sexual relationships. Open this link to connect with me on PPMap. Log in or register first if you need to.\n\n${joinUrl}`;
     const [partnerLabel, setPartnerLabel] = useState(() => rel.otherHandle ? (getLabel(rel.otherHandle) || "") : "");
     const [error, setError] = useState("");
 
@@ -654,12 +666,12 @@ function EdgeMenu({ rel, onClose, onChange, onLabelSaved }) {
         <Modal title={isPending ? "Pending relationship" : "Relationship"} onClose={onClose}>
             {isPending ? (
                 <section className="modal-section">
-                    <p>This relationship is waiting for someone to join. Send them this link.</p>
-                    <div className="handle-block">
-                        <code style={{ wordBreak: "break-all" }}>{joinUrl}</code>
-                        <button onClick={() => navigator.clipboard?.writeText(joinUrl)}>Copy</button>
+                    <p>This relationship is waiting for someone to join. Send them this message.</p>
+                    <div className="join-message-block">
+                        <code>{joinMessage}</code>
+                        <button onClick={() => navigator.clipboard?.writeText(joinMessage)}>Copy message</button>
                     </div>
-                    <p className="modal-hint">Share over a channel you trust. Anyone who opens this link while logged in can join.</p>
+                    <p className="modal-hint">Share over a channel you trust. Anyone who opens the link while logged in can join.</p>
                 </section>
             ) : (
                 <>

@@ -30,6 +30,7 @@ export default function RelationshipGraph({
     edges: inputEdges,
     onSelfClick,
     onEdgeClick,
+    onNodeClick,
     viewport,
     onViewportChange,
 }) {
@@ -187,18 +188,31 @@ export default function RelationshipGraph({
         });
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e) => {
         if (panRef.current) {
             panRef.current = null;
             return;
         }
         if (draggedNodeIndex.current !== null) {
             const indexToRelease = draggedNodeIndex.current;
+            const start = dragStartRef.current;
+            const pt = svgPoint(e);
+            const CTM = svgRef.current?.getScreenCTM();
+            let isClick = false;
+            if (start && pt && CTM) {
+                const screenDx = (pt.x - start.x) * CTM.a;
+                const screenDy = (pt.y - start.y) * CTM.d;
+                isClick = Math.hypot(screenDx, screenDy) < CLICK_THRESHOLD_PX;
+            }
             draggedNodeIndex.current = null;
             dragStartRef.current = null;
             setNodes(prev => prev.map((n, i) =>
                 i === indexToRelease ? { ...n, isDragging: false } : n
             ));
+            if (isClick && onNodeClick) {
+                const node = nodes[indexToRelease];
+                if (node) onNodeClick(node);
+            }
         }
     };
 

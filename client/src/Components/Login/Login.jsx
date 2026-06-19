@@ -96,6 +96,9 @@ export default function Login() {
 
   return (
     <div className="login-container">
+      <p className="site-description">
+        PPMap is a private map of romantic and sexual relationships. You add partners with one-time invite links. Turn on discoverable mode to see the wider polycule you are part of.
+      </p>
       <h2>{registerMode ? "Register" : "Login"}</h2>
       <p>
         {registerMode
