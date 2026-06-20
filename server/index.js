@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import cron from "node-cron"; // 1. Import node-cron
+import path from "path";
+import { fileURLToPath } from "url";
 import peopleRouter from "./routes/personRoute.js";
 import relationshipsRouter from "./routes/relationshipRoute.js";
 // Assuming this is the function that performs the cleanup
@@ -65,3 +67,7 @@ mongoose.connect(MONGODB_URL)
 
 app.use("/api", peopleRouter);
 app.use("/api", relationshipsRouter);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const buildDir = path.join(__dirname, "..", "client", "build");
+app.use(express.static(buildDir));
+app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(buildDir, "index.html")));
