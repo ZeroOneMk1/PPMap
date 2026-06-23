@@ -261,7 +261,7 @@ export default function Dashboard() {
     // client-side. This keeps filter toggles instant and avoids the flicker that
     // happened when display showed old filtered data while a refetch was in flight.
     const [graphData, setGraphData] = useState(null);
-    const [openModal, setOpenModal] = useState(null); // null | "self" | { type: "edge", rel }
+    const [openModal, setOpenModal] = useState(null); // null | "self" | { type: "edge", relationshipUUID }    const [createOpen, setCreateOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
     const [toast, setToast] = useState("");
     // Bumped when a local label changes so the memoised graph data picks up the new label.
@@ -369,18 +369,26 @@ export default function Dashboard() {
 
     const handleEdgeClick = (edgeRaw) => {
         if (!edgeRaw?.relationshipUUID) return;
-        const rel = directRels.find(r => r.relationshipUUID === edgeRaw.relationshipUUID);
-        if (rel) setOpenModal({ type: "edge", rel });
+
+        setOpenModal({
+            type: "edge",
+            relationshipUUID: edgeRaw.relationshipUUID
+        });
     };
 
     const handleNodeClick = (node) => {
         if (!node) return;
         if (node.type !== "direct" && node.type !== "pending") return;
+
         const prefix = "direct:";
         if (!node.id?.startsWith(prefix)) return;
+
         const uuid = node.id.slice(prefix.length);
-        const rel = directRels.find(r => r.relationshipUUID === uuid);
-        if (rel) setOpenModal({ type: "edge", rel });
+
+        setOpenModal({
+            type: "edge",
+            relationshipUUID: uuid
+        });
     };
 
     // Convert the self node's viewBox position (500, 500) to screen pixels.
@@ -516,13 +524,17 @@ export default function Dashboard() {
 
             {openModal?.type === "edge" && (
                 <EdgeMenu
-                    rel={openModal.rel}
+                    relationshipUUID={openModal.relationshipUUID}
+                    directRels={directRels}
                     onClose={() => setOpenModal(null)}
                     onChange={async () => {
                         await loadDirect();
                         if (discoverable) await loadGraph();
                     }}
-                    onLabelSaved={() => { setLabelVersion(v => v + 1); showToast("Label saved locally."); }}
+                    onLabelSaved={() => {
+                        setLabelVersion(v => v + 1);
+                        showToast("Label saved locally.");
+                    }}
                 />
             )}
 
@@ -627,8 +639,9 @@ function SelfMenu({ handle, discoverable, onClose, onDiscoverableChange, onLabel
     );
 }
 
-function EdgeMenu({ rel, onClose, onChange, onLabelSaved }) {
-    const isPending = !rel.otherHandle;
+function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSaved }) {
+    const rel = directRels.find(r => r.relationshipUUID === relationshipUUID);
+    const isPending = !rel?.otherHandle;
     const joinUrl = `${window.location.origin}/join-relationship/${rel.relationshipUUID}`;
     const joinMessage = `PPMap is a private map of romantic and sexual relationships. Open this link to connect with me on PPMap. Log in or register first if you need to.\n\n${joinUrl}`;
     const [partnerLabel, setPartnerLabel] = useState(() => rel.otherHandle ? (getLabel(rel.otherHandle) || "") : "");
