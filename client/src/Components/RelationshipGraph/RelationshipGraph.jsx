@@ -168,11 +168,12 @@ export default function RelationshipGraph({
         if (panRef.current) {
             const CTM = svgRef.current?.getScreenCTM();
             if (!CTM) return;
-            const dxView = (e.clientX - panRef.current.screenX) / CTM.a;
-            const dyView = (e.clientY - panRef.current.screenY) / CTM.d;
+            const { screenX, screenY, viewportX, viewportY } = panRef.current;
+            const dxView = (e.clientX - screenX) / CTM.a;
+            const dyView = (e.clientY - screenY) / CTM.d;
             setViewport(v => ({
-                x: panRef.current.viewportX - dxView,
-                y: panRef.current.viewportY - dyView,
+                x: viewportX - dxView,
+                y: viewportY - dyView,
                 w: v.w,
                 h: v.h,
             }));
