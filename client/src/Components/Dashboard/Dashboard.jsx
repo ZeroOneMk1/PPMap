@@ -59,7 +59,8 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustB
             directNodeByHandle.set(rel.otherHandle, nodeId);
         } else if (matches) {
             // Pending node only exists as an anchor for the dashed edge; drop it with the edge.
-            nodes.push({ id: nodeId, type: "pending", label: "pending" });
+            const pendingLabel = getLabel(rel.relationshipUUID) || "pending";
+            nodes.push({ id: nodeId, type: "pending", label: pendingLabel });
         }
         if (!matches) continue;
         edges.push({
@@ -664,6 +665,7 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
     const joinUrl = `${window.location.origin}/join-relationship/${rel.relationshipUUID}`;
     const joinMessage = `PPMap is a private map of romantic, sexual, and queerplatonic relationships. Open this link to connect with me on PPMap. Log in or register first if you need to.\n\n${joinUrl}`;
     const [partnerLabel, setPartnerLabel] = useState(() => rel.otherHandle ? (getLabel(rel.otherHandle) || "") : "");
+    const [pendingLabel, setPendingLabel] = useState(() => isPending ? (getLabel(rel.relationshipUUID) || "") : "");
     const [error, setError] = useState("");
 
     const setFlag = async (key, value) => {
@@ -698,6 +700,19 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
         <Modal title={isPending ? "Pending relationship" : "Relationship"} onClose={onClose}>
             {isPending ? (
                 <>
+                    <section className="modal-section">
+                        <label className="modal-label">Label for this invite (this browser only)</label>
+                        <div className="row">
+                            <input
+                                type="text"
+                                value={pendingLabel}
+                                onChange={(e) => setPendingLabel(e.target.value)}
+                                placeholder="Who is this for? e.g. Alex"
+                            />
+                            <button onClick={() => { setLabel(rel.relationshipUUID, pendingLabel.trim()); onLabelSaved?.(); }}>Save</button>
+                        </div>
+                        <p className="modal-hint">Shown on the pending node in your graph so multiple invites stay distinct. Never sent to the server.</p>
+                    </section>
                     <section className="modal-section">
                         <label className="modal-label">Join link</label>
                         <div className="handle-block">
