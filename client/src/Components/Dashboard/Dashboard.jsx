@@ -24,7 +24,7 @@ function Modal({ onClose, children, title }) {
     );
 }
 
-function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustBeRomantic, mustBeSexual }) {
+function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustBeRomantic, mustBeSexual, mustBeQPR }) {
     const nodes = [];
     const edges = [];
 
@@ -35,7 +35,10 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustB
         hidden: !discoverable,
     });
 
-    const passesFilter = (rel) => !(mustBeRomantic && !rel.romantic) && !(mustBeSexual && !rel.sexual);
+    const passesFilter = (rel) =>
+        !(mustBeRomantic && !rel.romantic) &&
+        !(mustBeSexual && !rel.sexual) &&
+        !(mustBeQPR && (rel.romantic || rel.sexual));
 
     const directNodeByHandle = new Map();
     for (const rel of directRels) {
@@ -151,12 +154,12 @@ function computePolyculeStats({ directRels, graphData, discoverable }) {
 
     const E = edges.length;
     const N = people;
-    let both = 0, romanticOnly = 0, sexualOnly = 0, neither = 0;
+    let both = 0, romanticOnly = 0, sexualOnly = 0, qpr = 0;
     for (const e of edges) {
         if (e.romantic && e.sexual) both += 1;
         else if (e.romantic) romanticOnly += 1;
         else if (e.sexual) sexualOnly += 1;
-        else neither += 1;
+        else qpr += 1;
     }
     const pct = (n) => (E > 0 ? n / E : 0);
 
@@ -195,7 +198,7 @@ function computePolyculeStats({ directRels, graphData, discoverable }) {
             both: { count: both, pct: pct(both) },
             romanticOnly: { count: romanticOnly, pct: pct(romanticOnly) },
             sexualOnly: { count: sexualOnly, pct: pct(sexualOnly) },
-            neither: { count: neither, pct: pct(neither) },
+            qpr: { count: qpr, pct: pct(qpr) },
         },
     };
 }
@@ -244,9 +247,9 @@ function StatsPanel({ stats, discoverable, collapsed, onToggle }) {
                         <strong>{stats.types.sexualOnly.count} <span className="stats-pct">({fmtPct(stats.types.sexualOnly.pct)})</span></strong>
                     </div>
                     <div className="stats-type-row">
-                        <span className="stats-swatch" style={{ background: "#888" }} />
-                        <span className="stats-type-label">Neither</span>
-                        <strong>{stats.types.neither.count} <span className="stats-pct">({fmtPct(stats.types.neither.pct)})</span></strong>
+                        <span className="stats-swatch" style={{ background: "#16a34a" }} />
+                        <span className="stats-type-label">Queerplatonic (QPR)</span>
+                        <strong>{stats.types.qpr.count} <span className="stats-pct">({fmtPct(stats.types.qpr.pct)})</span></strong>
                     </div>
                 </div>
                 {!discoverable && (
@@ -274,6 +277,7 @@ export default function Dashboard() {
     // Wider-graph filters. They have no effect on the direct ring.
     const [filterRomantic, setFilterRomantic] = useState(false);
     const [filterSexual, setFilterSexual] = useState(false);
+    const [filterQPR, setFilterQPR] = useState(false);
     const [statsCollapsed, setStatsCollapsed] = useState(() => window.innerWidth < 640);
     // viewport reported up from the graph; used to compute where to draw the
     // discoverability notice so it tracks the self ball on pan and zoom.
@@ -341,9 +345,10 @@ export default function Dashboard() {
             discoverable,
             mustBeRomantic: filterRomantic,
             mustBeSexual: filterSexual,
+            mustBeQPR: filterQPR,
         }),
         // labelVersion is included so saved local labels propagate to the graph.
-        [selfHandle, directRels, graphData, discoverable, labelVersion, filterRomantic, filterSexual]
+        [selfHandle, directRels, graphData, discoverable, labelVersion, filterRomantic, filterSexual, filterQPR]
     );
 
     const stats = useMemo(
@@ -436,6 +441,14 @@ export default function Dashboard() {
                                 onChange={(e) => setFilterSexual(e.target.checked)}
                             />
                             {" "}Sexual
+                        </label>
+                        <label className="filter-checkbox">
+                            <input
+                                type="checkbox"
+                                checked={filterQPR}
+                                onChange={(e) => setFilterQPR(e.target.checked)}
+                            />
+                            {" "}Queerplatonic (QPR)
                         </label>
                     </div>
                 )}
@@ -619,7 +632,7 @@ function SelfMenu({ handle, discoverable, onClose, onDiscoverableChange, onLabel
                 <details className="modal-details">
                     <summary>What enabling this exposes</summary>
                     <div>
-                        The wider graph returns the structural shape of the connected component with romantic and sexual flags on each edge. Node IDs are randomised on every request, but anyone running the query can see how many partners you have, how many partners your partners have, and the flag pattern of each edge. In a small community, this shape can be enough to identify you. The server admin can read the full edge list with real handles regardless of this setting.
+                        The wider graph returns the structural shape of the connected component with romantic, sexual, and queerplatonic flags on each edge. Node IDs are randomised on every request, but anyone running the query can see how many partners you have, how many partners your partners have, and the flag pattern of each edge. In a small community, this shape can be enough to identify you. The server admin can read the full edge list with real handles regardless of this setting.
                     </div>
                 </details>
             </section>
@@ -649,7 +662,7 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
     const rel = directRels.find(r => r.relationshipUUID === relationshipUUID);
     const isPending = !rel?.otherHandle;
     const joinUrl = `${window.location.origin}/join-relationship/${rel.relationshipUUID}`;
-    const joinMessage = `PPMap is a private map of romantic and sexual relationships. Open this link to connect with me on PPMap. Log in or register first if you need to.\n\n${joinUrl}`;
+    const joinMessage = `PPMap is a private map of romantic, sexual, and queerplatonic relationships. Open this link to connect with me on PPMap. Log in or register first if you need to.\n\n${joinUrl}`;
     const [partnerLabel, setPartnerLabel] = useState(() => rel.otherHandle ? (getLabel(rel.otherHandle) || "") : "");
     const [error, setError] = useState("");
 
@@ -684,14 +697,29 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
     return (
         <Modal title={isPending ? "Pending relationship" : "Relationship"} onClose={onClose}>
             {isPending ? (
-                <section className="modal-section">
-                    <p>This relationship is waiting for someone to join. Send them this message.</p>
-                    <div className="join-message-block">
-                        <code>{joinMessage}</code>
-                        <button onClick={() => navigator.clipboard?.writeText(joinMessage)}>Copy message</button>
-                    </div>
-                    <p className="modal-hint">Share over a channel you trust. Anyone who opens the link while logged in can join.</p>
-                </section>
+                <>
+                    <section className="modal-section">
+                        <label className="modal-label">Join link</label>
+                        <div className="handle-block">
+                            <code>{joinUrl}</code>
+                            <button onClick={() => navigator.clipboard?.writeText(joinUrl)}>Copy link</button>
+                        </div>
+                        <p className="modal-hint">Anyone logged in who opens this link can join. Share it over a channel you trust.</p>
+                    </section>
+                    <section className="modal-section">
+                        <label className="modal-label">Ready-to-send message</label>
+                        <div className="join-message-block">
+                            <code>{joinMessage}</code>
+                            <button onClick={() => navigator.clipboard?.writeText(joinMessage)}>Copy message</button>
+                        </div>
+                    </section>
+                    <section className="modal-section">
+                        <label className="modal-label">Add your own words too</label>
+                        <p className="modal-hint">
+                            The join link doesn't show your name, so your partner may not know who it's from. We encourage you to also send a personal message — let them know it's from you, give them any context about this relationship, and say whatever feels right. PPMap handles the infrastructure; the conversation is yours.
+                        </p>
+                    </section>
+                </>
             ) : (
                 <>
                     <section className="modal-section">
@@ -735,6 +763,11 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
                     />
                     {" "}Sexual
                 </label>
+                {!rel.romantic && !rel.sexual && (
+                    <p className="modal-hint" style={{ color: "#16a34a" }}>
+                        Queerplatonic (QPR) — intimate and committed, but platonic and non-sexual.
+                    </p>
+                )}
                 {isPending && <p className="modal-hint">You can change the type once the other person has joined.</p>}
             </section>
 
@@ -762,6 +795,7 @@ function CreateMenu({ onClose, onSubmit }) {
                     <input type="checkbox" checked={sexual} onChange={(e) => setSexual(e.target.checked)} />
                     {" "}Sexual
                 </label>
+                <p className="modal-hint">Leave both unchecked for a queerplatonic (QPR) relationship.</p>
             </section>
             <section className="modal-section">
                 <button className="primary-button" onClick={() => onSubmit({ romantic, sexual })}>Create</button>

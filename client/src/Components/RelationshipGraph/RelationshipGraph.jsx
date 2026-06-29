@@ -8,7 +8,7 @@ function edgeColour(romantic, sexual) {
     if (romantic && sexual) return "#340c46";
     if (romantic) return "#009fe3";
     if (sexual) return "#e50051";
-    return "#888";
+    return "#16a34a"; // queerplatonic / QPR
 }
 
 const VIEW = 1000;        // viewBox edge length
