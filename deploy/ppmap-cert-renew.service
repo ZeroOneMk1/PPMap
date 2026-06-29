@@ -1,0 +1,10 @@
+[Unit]
+Description=Renew Tailscale TLS cert for PPMap
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tailscale cert \
+    --cert-file /etc/ppmap/certs/ppmap.tailbda370.ts.net.crt \
+    --key-file  /etc/ppmap/certs/ppmap.tailbda370.ts.net.key \
+    ppmap.tailbda370.ts.net
+ExecStartPost=/bin/systemctl reload caddy

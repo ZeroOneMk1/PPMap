@@ -1,0 +1,4 @@
+ppmap.tailbda370.ts.net {
+    tls /etc/ppmap/certs/ppmap.tailbda370.ts.net.crt /etc/ppmap/certs/ppmap.tailbda370.ts.net.key
+    reverse_proxy localhost:8000
+}

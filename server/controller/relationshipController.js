@@ -339,10 +339,17 @@ export const deleteAllInvalidRelationships = async (req, res) => {
             const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
             if (rel.time_created < oneYearAgo) shouldDelete = true
 
-            if (uniqueRelationshipPairs.has(rel.persons.sort().join('-'))) {
-                shouldDelete = true
-            } else if (!shouldDelete) {
-                uniqueRelationshipPairs.add(rel.persons.sort().join('-'))
+            // Only deduplicate completed relationships. Multiple pending invites
+            // from the same person all share persons=[handle, null] and would
+            // otherwise be incorrectly treated as duplicates of each other.
+            const isPending = rel.persons.includes(null);
+            if (!isPending) {
+                const pairKey = [...rel.persons].sort().join('-');
+                if (uniqueRelationshipPairs.has(pairKey)) {
+                    shouldDelete = true;
+                } else if (!shouldDelete) {
+                    uniqueRelationshipPairs.add(pairKey);
+                }
             }
 
             if (shouldDelete) {
