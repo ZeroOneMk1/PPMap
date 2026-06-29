@@ -714,9 +714,12 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
                         </div>
                     </section>
                     <section className="modal-section">
-                        <label className="modal-label">Add your own words too</label>
+                        <label className="modal-label">Make it personal — and ask them to pay it forward</label>
                         <p className="modal-hint">
-                            The join link doesn't show your name, so your partner may not know who it's from. We encourage you to also send a personal message — let them know it's from you, give them any context about this relationship, and say whatever feels right. PPMap handles the infrastructure; the conversation is yours.
+                            The join link doesn't identify you, so send a personal message alongside it so they know who it's from and why you're sharing it.
+                        </p>
+                        <p className="modal-hint" style={{ marginTop: "8px" }}>
+                            Once they've joined, encourage them to create their own relationships and invite their partners too. That's how PPMap maps itself — through personal invitations in networks of trust.
                         </p>
                     </section>
                 </>
@@ -799,6 +802,9 @@ function CreateMenu({ onClose, onSubmit }) {
             </section>
             <section className="modal-section">
                 <button className="primary-button" onClick={() => onSubmit({ romantic, sexual })}>Create</button>
+                <p className="modal-hint" style={{ marginTop: "10px" }}>
+                    Once your partner joins, ask them to invite their partners too — that's how the map grows.
+                </p>
             </section>
         </Modal>
     );

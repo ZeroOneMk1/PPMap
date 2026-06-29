@@ -43,7 +43,9 @@ export default function JoinRelationship() {
           textAlign: "left",
         }}
       >
-        PPMap is a private map of romantic, sexual, and queerplatonic relationships in your polyamorous network! Someone shared this link to add you as their partner. Once you join, you can see your shared relationships, add your own, and explore the connections in your network. If you have any questions or need help, feel free to reach out to the person who shared this link with you!
+        PPMap is a private map of romantic, sexual, and queerplatonic relationships in your polyamorous network! Someone shared this link to add you as their partner. Once you join, you can see your shared relationships, add your own, and explore the connections in your network.
+        <br /><br />
+        After you're in: create relationships for your own partners and send them join links too. That's how PPMap maps itself — through personal invitations between people who already trust each other.
       </p>
       <h2>{status}</h2>
     </div>
