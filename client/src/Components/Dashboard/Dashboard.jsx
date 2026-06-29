@@ -200,54 +200,59 @@ function computePolyculeStats({ directRels, graphData, discoverable }) {
     };
 }
 
-function StatsPanel({ stats, discoverable }) {
+function StatsPanel({ stats, discoverable, collapsed, onToggle }) {
     const fmtPct = (v) => `${Math.round(v * 100)}%`;
     return (
         <div className="stats-panel">
-            <div className="stats-title">Polycule stats</div>
-            <div className="stats-grid">
-                <span>People</span><strong>{stats.people}</strong>
-                <span>Relationships</span><strong>{stats.relationships}</strong>
-                {stats.people > 1 && <>
-                    <span title="Fraction of all possible pairs that share a relationship.">Density</span>
-                    <strong>{fmtPct(stats.density)}</strong>
-                    <span title="Mean number of partners per person.">Avg partners</span>
-                    <strong>{stats.avgPartners.toFixed(1)}</strong>
-                    <span title="People who are in exactly one relationship.">Leaf members</span>
-                    <strong>{stats.leafCount}</strong>
-                    <span title="Longest shortest path between any two members.">Max separation</span>
-                    <strong>{stats.diameter}</strong>
-                    <span title="Highest partner count in the polycule.">Most partners</span>
-                    <strong>{stats.maxPartners}</strong>
-                </>}
-            </div>
-            <div className="stats-divider" />
-            <div className="stats-subtitle">Types</div>
-            <div className="stats-types">
-                <div className="stats-type-row">
-                    <span className="stats-swatch" style={{ background: "#340c46" }} />
-                    <span className="stats-type-label">Romantic + sexual</span>
-                    <strong>{stats.types.both.count} <span className="stats-pct">({fmtPct(stats.types.both.pct)})</span></strong>
+            <button className="stats-toggle" onClick={onToggle}>
+                <span className="stats-title">Polycule stats</span>
+                <span className="stats-toggle-arrow">{collapsed ? '▸' : '▾'}</span>
+            </button>
+            {!collapsed && <>
+                <div className="stats-grid">
+                    <span>People</span><strong>{stats.people}</strong>
+                    <span>Relationships</span><strong>{stats.relationships}</strong>
+                    {stats.people > 1 && <>
+                        <span title="Fraction of all possible pairs that share a relationship.">Density</span>
+                        <strong>{fmtPct(stats.density)}</strong>
+                        <span title="Mean number of partners per person.">Avg partners</span>
+                        <strong>{stats.avgPartners.toFixed(1)}</strong>
+                        <span title="People who are in exactly one relationship.">Leaf members</span>
+                        <strong>{stats.leafCount}</strong>
+                        <span title="Longest shortest path between any two members.">Max separation</span>
+                        <strong>{stats.diameter}</strong>
+                        <span title="Highest partner count in the polycule.">Most partners</span>
+                        <strong>{stats.maxPartners}</strong>
+                    </>}
                 </div>
-                <div className="stats-type-row">
-                    <span className="stats-swatch" style={{ background: "#009fe3" }} />
-                    <span className="stats-type-label">Romantic only</span>
-                    <strong>{stats.types.romanticOnly.count} <span className="stats-pct">({fmtPct(stats.types.romanticOnly.pct)})</span></strong>
+                <div className="stats-divider" />
+                <div className="stats-subtitle">Types</div>
+                <div className="stats-types">
+                    <div className="stats-type-row">
+                        <span className="stats-swatch" style={{ background: "#340c46" }} />
+                        <span className="stats-type-label">Romantic + sexual</span>
+                        <strong>{stats.types.both.count} <span className="stats-pct">({fmtPct(stats.types.both.pct)})</span></strong>
+                    </div>
+                    <div className="stats-type-row">
+                        <span className="stats-swatch" style={{ background: "#009fe3" }} />
+                        <span className="stats-type-label">Romantic only</span>
+                        <strong>{stats.types.romanticOnly.count} <span className="stats-pct">({fmtPct(stats.types.romanticOnly.pct)})</span></strong>
+                    </div>
+                    <div className="stats-type-row">
+                        <span className="stats-swatch" style={{ background: "#e50051" }} />
+                        <span className="stats-type-label">Sexual only</span>
+                        <strong>{stats.types.sexualOnly.count} <span className="stats-pct">({fmtPct(stats.types.sexualOnly.pct)})</span></strong>
+                    </div>
+                    <div className="stats-type-row">
+                        <span className="stats-swatch" style={{ background: "#888" }} />
+                        <span className="stats-type-label">Neither</span>
+                        <strong>{stats.types.neither.count} <span className="stats-pct">({fmtPct(stats.types.neither.pct)})</span></strong>
+                    </div>
                 </div>
-                <div className="stats-type-row">
-                    <span className="stats-swatch" style={{ background: "#e50051" }} />
-                    <span className="stats-type-label">Sexual only</span>
-                    <strong>{stats.types.sexualOnly.count} <span className="stats-pct">({fmtPct(stats.types.sexualOnly.pct)})</span></strong>
-                </div>
-                <div className="stats-type-row">
-                    <span className="stats-swatch" style={{ background: "#888" }} />
-                    <span className="stats-type-label">Neither</span>
-                    <strong>{stats.types.neither.count} <span className="stats-pct">({fmtPct(stats.types.neither.pct)})</span></strong>
-                </div>
-            </div>
-            {!discoverable && (
-                <div className="stats-note">Only direct relationships are visible. Enable discoverable to include the wider graph.</div>
-            )}
+                {!discoverable && (
+                    <div className="stats-note">Only direct relationships are visible. Enable discoverable to include the wider graph.</div>
+                )}
+            </>}
         </div>
     );
 }
@@ -269,6 +274,7 @@ export default function Dashboard() {
     // Wider-graph filters. They have no effect on the direct ring.
     const [filterRomantic, setFilterRomantic] = useState(false);
     const [filterSexual, setFilterSexual] = useState(false);
+    const [statsCollapsed, setStatsCollapsed] = useState(() => window.innerWidth < 640);
     // viewport reported up from the graph; used to compute where to draw the
     // discoverability notice so it tracks the self ball on pan and zoom.
     const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1000, h: 1000 });
@@ -449,7 +455,7 @@ export default function Dashboard() {
             </div>
 
             <div className="floating bottom-left">
-                <StatsPanel stats={stats} discoverable={discoverable} />
+                <StatsPanel stats={stats} discoverable={discoverable} collapsed={statsCollapsed} onToggle={() => setStatsCollapsed(v => !v)} />
             </div>
 
             {!discoverable && rootSize.w > 0 && (

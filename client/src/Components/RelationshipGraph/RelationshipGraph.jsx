@@ -42,6 +42,7 @@ export default function RelationshipGraph({
     const draggedNodeIndex = useRef(null);
     const dragStartRef = useRef(null);
     const panRef = useRef(null);
+    const pinchRef = useRef(null);
 
     const setViewport = onViewportChange;
 
@@ -221,6 +222,80 @@ export default function RelationshipGraph({
         if (onSelfClick) onSelfClick();
     };
 
+    const handleTouchStart = (e) => {
+        if (e.touches.length === 2) {
+            panRef.current = null;
+            pinchRef.current = {
+                dist: Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY,
+                ),
+            };
+            return;
+        }
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        if (e.target === svgRef.current) {
+            panRef.current = {
+                screenX: touch.clientX,
+                screenY: touch.clientY,
+                viewportX: viewport.x,
+                viewportY: viewport.y,
+            };
+        }
+    };
+
+    const handleNodeTouchStart = (e, index) => {
+        if (e.touches.length !== 1) return;
+        e.stopPropagation();
+        const touch = e.touches[0];
+        const node = nodes[index];
+        if (!node || node.pinned) return;
+        const pt = svgPoint({ clientX: touch.clientX, clientY: touch.clientY });
+        draggedNodeIndex.current = index;
+        dragStartRef.current = pt;
+        setNodes(prev => prev.map((n, i) =>
+            i === index ? { ...n, isDragging: true, vx: 0, vy: 0 } : n
+        ));
+    };
+
+    const handleTouchMove = (e) => {
+        if (pinchRef.current && e.touches.length === 2) {
+            const newDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY,
+            );
+            const factor = newDist / pinchRef.current.dist;
+            const mid = svgPoint({
+                clientX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                clientY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+            });
+            if (mid) {
+                setViewport(v => {
+                    const newW = v.w / factor;
+                    const ratio = newW / v.w;
+                    return {
+                        x: mid.x - (mid.x - v.x) * ratio,
+                        y: mid.y - (mid.y - v.y) * ratio,
+                        w: newW,
+                        h: v.h * ratio,
+                    };
+                });
+            }
+            pinchRef.current = { dist: newDist };
+            return;
+        }
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+    };
+
+    const handleTouchEnd = (e) => {
+        pinchRef.current = null;
+        const touch = e.changedTouches[0];
+        if (touch) handleMouseUp({ clientX: touch.clientX, clientY: touch.clientY });
+    };
+
     const handleEdgeClick = (e, link) => {
         e.stopPropagation();
         if (onEdgeClick) onEdgeClick(link.raw || {
@@ -312,6 +387,10 @@ export default function RelationshipGraph({
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
         >
             <defs>
                 {/* Diagonal stripes for the self node when not discoverable.
@@ -387,6 +466,7 @@ export default function RelationshipGraph({
                         key={i}
                         transform={`translate(${node.x || 0},${node.y || 0})`}
                         onMouseDown={(e) => { if (!isSelf) handleNodeMouseDown(e, i); }}
+                        onTouchStart={isSelf ? undefined : (e) => handleNodeTouchStart(e, i)}
                         onClick={isSelf ? handleSelfClick : undefined}
                         style={{ cursor: isSelf ? "pointer" : (isAnon ? "default" : "grab") }}
                     >
