@@ -715,7 +715,7 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
             {isPending ? (
                 <>
                     <section className="modal-section">
-                        <p className="modal-hint">Send this link to your partner. They log in (or register) and use it to connect with you. Once they're in, ask them to invite their own partners too — that's how the map grows.</p>
+                        <p className="modal-callout">Send this link to your partner. They log in (or register) and use it to connect with you. Once they're in, ask them to invite their own partners too — that's how the map grows.</p>
                     </section>
                     <section className="modal-section">
                         <label className="modal-label">Join link</label>
