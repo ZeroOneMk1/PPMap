@@ -87,8 +87,6 @@ export const createPerson = async (req, res) => {
         const hashed = await bcrypt.hash(password, saltRounds)
         const handle = await generateUniqueHandle()
         const newPerson = new person({ handle, password: hashed })
-        newPerson.isAdmin = false
-
         const savedPerson = await newPerson.save()
 
         const token = jwt.sign({ handle: savedPerson.handle }, process.env.JWT_SECRET, { expiresIn: '1h' })
@@ -142,22 +140,6 @@ export const loginPerson = async (req, res) => {
         setSessionCookie(res, token)
 
         res.status(200).json({ ok: true })
-    } catch (error) {
-        console.error(error)
-        res.status(500).json({ message: "Internal error" })
-    }
-}
-
-export const getAllPersons = async (req, res) => {
-    const decoded = requireAuth(req, res)
-    if (!decoded) return
-    try {
-        const requestingPerson = await person.findOne({ handle: decoded.handle })
-        if (!requestingPerson || !requestingPerson.isAdmin) {
-            return res.status(403).json({ message: "Access denied" })
-        }
-        const persons = await person.find().select('-password')
-        res.status(200).json(persons)
     } catch (error) {
         console.error(error)
         res.status(500).json({ message: "Internal error" })

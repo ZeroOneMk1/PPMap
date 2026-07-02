@@ -1,6 +1,6 @@
 import express from "express"
 import rateLimit from "express-rate-limit"
-import { createPerson, deletePerson, getPersonByToken, getAllPersons, updatePersonPassword, loginPerson, logoutPerson, toggleDiscoverability } from "../controller/personController.js"
+import { createPerson, deletePerson, getPersonByToken, updatePersonPassword, loginPerson, logoutPerson, toggleDiscoverability } from "../controller/personController.js"
 
 const peopleRouter = express.Router();
 
@@ -24,7 +24,6 @@ const registerLimiter = rateLimit({
 peopleRouter.post("/person", registerLimiter, createPerson);
 peopleRouter.post("/person/delete", deletePerson);
 peopleRouter.get("/person/get", getPersonByToken);
-peopleRouter.get("/person/getAll", getAllPersons);
 peopleRouter.post("/person/updatepassword", updatePersonPassword);
 peopleRouter.post("/person/login", loginLimiter, loginPerson);
 peopleRouter.post("/person/logout", logoutPerson);

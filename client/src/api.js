@@ -26,7 +26,6 @@ function withQuery(path, params) {
 export const createPerson = (payload) => request(`/person`, { method: "POST", body: JSON.stringify(payload) });
 export const deletePerson = () => request(`/person/delete`, { method: "POST" });
 export const getPersonByToken = () => request(`/person/get`, { method: "GET" });
-export const getAllPersons = () => request(`/person/getAll`, { method: "GET" });
 export const updatePersonPassword = (payload) => request(`/person/updatepassword`, { method: "POST", body: JSON.stringify(payload) });
 export const loginPerson = (payload) => request(`/person/login`, { method: "POST", body: JSON.stringify(payload) });
 export const logout = () => request(`/person/logout`, { method: "POST" });
