@@ -103,11 +103,25 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustB
         }
     }
 
-    // Drop nodes with no displayed edges (except self) so isolated nodes don't
-    // drift across the canvas when filters remove their connections.
-    const used = new Set();
-    for (const e of edges) { used.add(e.source); used.add(e.target); }
-    const visibleNodes = nodes.filter(n => n.id === "self" || used.has(n.id));
+    // Keep only nodes reachable from "self" through the filtered edge set.
+    // A simple "has any edge" check leaves disconnected subgraphs visible when
+    // filters sever their only path back to self.
+    const adj = new Map();
+    for (const e of edges) {
+        if (!adj.has(e.source)) adj.set(e.source, []);
+        if (!adj.has(e.target)) adj.set(e.target, []);
+        adj.get(e.source).push(e.target);
+        adj.get(e.target).push(e.source);
+    }
+    const reachable = new Set(["self"]);
+    const queue = ["self"];
+    while (queue.length) {
+        const cur = queue.shift();
+        for (const nb of (adj.get(cur) || [])) {
+            if (!reachable.has(nb)) { reachable.add(nb); queue.push(nb); }
+        }
+    }
+    const visibleNodes = nodes.filter(n => reachable.has(n.id));
 
     return { nodes: visibleNodes, edges };
 }
