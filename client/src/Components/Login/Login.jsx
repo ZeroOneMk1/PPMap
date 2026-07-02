@@ -99,6 +99,9 @@ export default function Login() {
       <p className="site-description">
         PPMap is a private map of romantic and sexual relationships. You add partners with one-time invite links. Turn on discoverable mode to see the wider polycule you are part of.
       </p>
+      <p style={{ fontSize: "0.85em", color: "#666", marginTop: "-8px" }}>
+        <a href="https://github.com/ZeroOneMk1/PPMap" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+      </p>
       <h2>{registerMode ? "Register" : "Login"}</h2>
       <p>
         {registerMode
