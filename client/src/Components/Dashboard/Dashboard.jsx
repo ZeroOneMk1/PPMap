@@ -113,15 +113,17 @@ function buildGraphData({ selfHandle, directRels, graphData, discoverable, mustB
         adj.get(e.source).push(e.target);
         adj.get(e.target).push(e.source);
     }
-    const reachable = new Set(["self"]);
+    const dist = new Map([["self", 0]]);
     const queue = ["self"];
     while (queue.length) {
         const cur = queue.shift();
         for (const nb of (adj.get(cur) || [])) {
-            if (!reachable.has(nb)) { reachable.add(nb); queue.push(nb); }
+            if (!dist.has(nb)) { dist.set(nb, dist.get(cur) + 1); queue.push(nb); }
         }
     }
-    const visibleNodes = nodes.filter(n => reachable.has(n.id));
+    const visibleNodes = nodes
+        .filter(n => dist.has(n.id))
+        .map(n => n.type === "self" ? n : { ...n, degree: dist.get(n.id) });
 
     return { nodes: visibleNodes, edges };
 }
@@ -652,9 +654,13 @@ function SelfMenu({ handle, discoverable, onClose, onDiscoverableChange, onLabel
                     <p className="modal-hint" style={{ marginTop: "8px" }}>
                         {!lookupResult.accountExists
                             ? "No account with that handle."
-                            : lookupResult.connected
-                                ? "You are connected to that person."
-                                : "That account exists, but you are not connected to them."}
+                            : lookupResult.degrees === 0
+                                ? "That's you."
+                                : lookupResult.degrees === 1
+                                    ? "Directly connected. (1 degree)"
+                                    : lookupResult.degrees != null
+                                        ? `${lookupResult.degrees} degrees of separation.`
+                                        : "That account exists but is not reachable through the discoverable graph."}
                     </p>
                 )}
                 {lookupResult?.error && <p className="modal-error">Lookup failed.</p>}

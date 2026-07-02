@@ -486,6 +486,16 @@ export default function RelationshipGraph({
                                 {node.label}
                             </text>
                         )}
+                        {node.degree != null && (
+                            <text
+                                dy={-radius - 5}
+                                textAnchor="middle"
+                                className="node-degree"
+                                style={{ pointerEvents: "none" }}
+                            >
+                                {node.degree}
+                            </text>
+                        )}
                     </g>
                 );
             })}

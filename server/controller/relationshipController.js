@@ -315,32 +315,56 @@ export const editRelationshipAsPerson = async (req, res) => {
     }
 }
 
-// Check whether the authenticated user is connected to a given handle.
-// Also reveals whether an account with that handle exists — both facts are
-// documented in the privacy notice on the login page.
+// Check whether the authenticated user is connected to a given handle, and how
+// many degrees of separation exist. Direct connections are reported regardless
+// of the target's discoverability; intermediaries must be discoverable.
+// Both accountExists and degrees are documented in the privacy notice.
 export const checkConnection = async (req, res) => {
     try {
         const decoded = requireAuth(req, res);
         if (!decoded) return;
         const { handle } = decoded;
-        const targetHandle = req.query?.handle;
-        if (typeof targetHandle !== "string" || !targetHandle.trim()) {
+        const targetHandle = req.query?.handle?.trim();
+        if (typeof targetHandle !== "string" || !targetHandle) {
             return res.status(400).json({ message: "Invalid input" });
         }
-        const targetPerson = await person.findOne({ handle: targetHandle.trim() });
+        if (targetHandle === handle) {
+            return res.status(200).json({ accountExists: true, degrees: 0 });
+        }
+        const targetPerson = await person.findOne({ handle: targetHandle });
         if (!targetPerson) {
-            return res.status(200).json({ accountExists: false, connected: false });
+            return res.status(200).json({ accountExists: false, degrees: null });
         }
         const me = await person.findOne({ handle });
         if (!me) return res.status(404).json({ message: "Person not found" });
-        for (const relUUID of me.relationships) {
-            const rel = await relationship.findOne({ UUID: relUUID });
-            if (!rel) continue;
-            if (rel.persons.includes(targetHandle.trim())) {
-                return res.status(200).json({ accountExists: true, connected: true });
+
+        // BFS from self. The target is always reported when found (regardless of
+        // its own discoverability). Non-discoverable nodes are not used as
+        // intermediaries, consistent with the wider graph endpoint.
+        const dist = new Map([[handle, 0]]);
+        const queue = [handle];
+        while (queue.length > 0) {
+            const currentHandle = queue.shift();
+            const depth = dist.get(currentHandle);
+            if (depth >= 6) continue;
+            const currentPerson = currentHandle === handle ? me : await person.findOne({ handle: currentHandle });
+            if (!currentPerson) continue;
+            for (const relUUID of currentPerson.relationships) {
+                const rel = await relationship.findOne({ UUID: relUUID });
+                if (!rel) continue;
+                for (const otherHandle of rel.persons) {
+                    if (!otherHandle || dist.has(otherHandle)) continue;
+                    if (otherHandle === targetHandle) {
+                        return res.status(200).json({ accountExists: true, degrees: depth + 1 });
+                    }
+                    const other = await person.findOne({ handle: otherHandle });
+                    if (!other || other.discoverable === false) continue;
+                    dist.set(otherHandle, depth + 1);
+                    queue.push(otherHandle);
+                }
             }
         }
-        return res.status(200).json({ accountExists: true, connected: false });
+        return res.status(200).json({ accountExists: true, degrees: null });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal error" });

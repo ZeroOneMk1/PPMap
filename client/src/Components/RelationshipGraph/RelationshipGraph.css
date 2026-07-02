@@ -65,3 +65,10 @@
     font-weight: 500;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
+
+.node-degree {
+    font-size: 11px;
+    user-select: none;
+    fill: #999;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
