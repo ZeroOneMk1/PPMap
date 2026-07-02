@@ -315,6 +315,38 @@ export const editRelationshipAsPerson = async (req, res) => {
     }
 }
 
+// Check whether the authenticated user is connected to a given handle.
+// Also reveals whether an account with that handle exists — both facts are
+// documented in the privacy notice on the login page.
+export const checkConnection = async (req, res) => {
+    try {
+        const decoded = requireAuth(req, res);
+        if (!decoded) return;
+        const { handle } = decoded;
+        const targetHandle = req.query?.handle;
+        if (typeof targetHandle !== "string" || !targetHandle.trim()) {
+            return res.status(400).json({ message: "Invalid input" });
+        }
+        const targetPerson = await person.findOne({ handle: targetHandle.trim() });
+        if (!targetPerson) {
+            return res.status(200).json({ accountExists: false, connected: false });
+        }
+        const me = await person.findOne({ handle });
+        if (!me) return res.status(404).json({ message: "Person not found" });
+        for (const relUUID of me.relationships) {
+            const rel = await relationship.findOne({ UUID: relUUID });
+            if (!rel) continue;
+            if (rel.persons.includes(targetHandle.trim())) {
+                return res.status(200).json({ accountExists: true, connected: true });
+            }
+        }
+        return res.status(200).json({ accountExists: true, connected: false });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal error" });
+    }
+}
+
 export const deleteAllInvalidRelationships = async (req, res) => {
     try {
         const persons = await person.find()

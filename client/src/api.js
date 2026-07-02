@@ -36,4 +36,5 @@ export const joinRelationship = (payload) => request(`/relationship/join`, { met
 export const endRelationship = (payload) => request(`/relationship/end`, { method: "POST", body: JSON.stringify(payload) });
 export const editRelationship = (payload) => request(`/relationship/edit`, { method: "POST", body: JSON.stringify(payload) });
 export const getDirectRelationships = () => request(`/relationship/direct`, { method: "GET" });
+export const checkConnection = (handle) => request(withQuery(`/relationship/connected`, { handle }), { method: "GET" });
 export const getRelationshipGraph = (payload) => request(withQuery(`/relationship/graph`, payload), { method: "GET" });

@@ -7,6 +7,7 @@ import {
     editRelationshipAsPerson,
     getDirectRelationships,
     getRelationshipGraph,
+    checkConnection,
 } from "../controller/relationshipController.js"
 
 const relationshipsRouter = express.Router();
@@ -25,6 +26,7 @@ relationshipsRouter.post("/relationship/join", joinRelationshipAsPerson);
 relationshipsRouter.post("/relationship/end", endRelationshipAsPerson);
 relationshipsRouter.post("/relationship/edit", editRelationshipAsPerson);
 relationshipsRouter.get("/relationship/direct", getDirectRelationships);
+relationshipsRouter.get("/relationship/connected", checkConnection);
 relationshipsRouter.get("/relationship/graph", graphLimiter, getRelationshipGraph);
 
 export default relationshipsRouter;

@@ -587,6 +587,24 @@ function SelfMenu({ handle, discoverable, onClose, onDiscoverableChange, onLabel
     const [oldPw, setOldPw] = useState("");
     const [newPw, setNewPw] = useState("");
     const [error, setError] = useState("");
+    const [lookupHandle, setLookupHandle] = useState("");
+    const [lookupResult, setLookupResult] = useState(null); // null | {accountExists, connected}
+    const [lookupLoading, setLookupLoading] = useState(false);
+
+    const checkConnection = async () => {
+        const h = lookupHandle.trim();
+        if (!h) return;
+        setLookupLoading(true);
+        setLookupResult(null);
+        try {
+            const res = await api.checkConnection(h);
+            setLookupResult(res);
+        } catch {
+            setLookupResult({ error: true });
+        } finally {
+            setLookupLoading(false);
+        }
+    };
 
     const saveLabel = () => {
         setLabel(handle, displayName.trim());
@@ -614,6 +632,32 @@ function SelfMenu({ handle, discoverable, onClose, onDiscoverableChange, onLabel
                     <button onClick={() => navigator.clipboard?.writeText(handle)}>Copy</button>
                 </div>
                 <p className="modal-hint">Share this with someone if you want to connect with them. They cannot find you on the system without it.</p>
+            </section>
+
+            <section className="modal-section">
+                <label className="modal-label">Check connection</label>
+                <div className="row">
+                    <input
+                        type="text"
+                        value={lookupHandle}
+                        onChange={(e) => { setLookupHandle(e.target.value); setLookupResult(null); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") checkConnection(); }}
+                        placeholder="Enter a handle"
+                    />
+                    <button onClick={checkConnection} disabled={lookupLoading || !lookupHandle.trim()}>
+                        {lookupLoading ? "…" : "Check"}
+                    </button>
+                </div>
+                {lookupResult && !lookupResult.error && (
+                    <p className="modal-hint" style={{ marginTop: "8px" }}>
+                        {!lookupResult.accountExists
+                            ? "No account with that handle."
+                            : lookupResult.connected
+                                ? "You are connected to that person."
+                                : "That account exists, but you are not connected to them."}
+                    </p>
+                )}
+                {lookupResult?.error && <p className="modal-error">Lookup failed.</p>}
             </section>
 
             <section className="modal-section">
@@ -715,7 +759,7 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
             {isPending ? (
                 <>
                     <section className="modal-section">
-                        <p className="modal-callout">Send this link to your partner. They log in (or register) and use it to connect with you. Once they're in, ask them to invite their own partners too — that's how the map grows.</p>
+                        <p className="modal-callout">Send this link to your partner. They log in (or register) and use it to connect with you. Once they're in, please ask them to invite their own partners too :3  that's how the map grows!</p>
                     </section>
                     <section className="modal-section">
                         <label className="modal-label">Join link</label>
@@ -783,10 +827,10 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
                 </label>
                 {!rel.romantic && !rel.sexual && (
                     <p className="modal-hint" style={{ color: "#16a34a" }}>
-                        Queerplatonic (QPR) — intimate and committed, but platonic and non-sexual.
+                        Queerplatonic (QPR).
                     </p>
                 )}
-                {isPending && <p className="modal-hint">You can change the type once the other person has joined.</p>}
+                {isPending && <p className="modal-hint">You can change the type at any time.</p>}
             </section>
 
             <section className="modal-section">
@@ -818,7 +862,7 @@ function CreateMenu({ onClose, onSubmit }) {
             <section className="modal-section">
                 <button className="primary-button" onClick={() => onSubmit({ romantic, sexual })}>Create</button>
                 <p className="modal-hint" style={{ marginTop: "10px" }}>
-                    Once your partner joins, ask them to invite their partners too — that's how the map grows.
+                    Once your partner joins, please ask them to invite their own partners too :3  that's how the map grows!
                 </p>
             </section>
         </Modal>
