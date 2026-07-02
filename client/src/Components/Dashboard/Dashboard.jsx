@@ -715,7 +715,17 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
             {isPending ? (
                 <>
                     <section className="modal-section">
-                        <label className="modal-label">Label for this invite (this browser only)</label>
+                        <p className="modal-hint">Send this link to your partner. They log in (or register) and use it to connect with you. Once they're in, ask them to invite their own partners too — that's how the map grows.</p>
+                    </section>
+                    <section className="modal-section">
+                        <label className="modal-label">Join link</label>
+                        <div className="handle-block">
+                            <code>{joinUrl}</code>
+                            <button onClick={() => navigator.clipboard?.writeText(joinUrl)}>Copy link</button>
+                        </div>
+                    </section>
+                    <section className="modal-section">
+                        <label className="modal-label">Label (this browser only)</label>
                         <div className="row">
                             <input
                                 type="text"
@@ -725,31 +735,7 @@ function EdgeMenu({ relationshipUUID, directRels, onClose, onChange, onLabelSave
                             />
                             <button onClick={() => { setLabel(rel.relationshipUUID, pendingLabel.trim()); onLabelSaved?.(); }}>Save</button>
                         </div>
-                        <p className="modal-hint">Shown on the pending node in your graph so multiple invites stay distinct. Never sent to the server.</p>
-                    </section>
-                    <section className="modal-section">
-                        <label className="modal-label">Join link</label>
-                        <div className="handle-block">
-                            <code>{joinUrl}</code>
-                            <button onClick={() => navigator.clipboard?.writeText(joinUrl)}>Copy link</button>
-                        </div>
-                        <p className="modal-hint">Anyone logged in who opens this link can join. Share it over a channel you trust.</p>
-                    </section>
-                    <section className="modal-section">
-                        <label className="modal-label">Ready-to-send message</label>
-                        <div className="join-message-block">
-                            <code>{joinMessage}</code>
-                            <button onClick={() => navigator.clipboard?.writeText(joinMessage)}>Copy message</button>
-                        </div>
-                    </section>
-                    <section className="modal-section">
-                        <label className="modal-label">Make it personal — and ask them to pay it forward</label>
-                        <p className="modal-hint">
-                            The join link doesn't identify you, so send a personal message alongside it so they know who it's from and why you're sharing it.
-                        </p>
-                        <p className="modal-hint" style={{ marginTop: "8px" }}>
-                            Once they've joined, encourage them to create their own relationships and invite their partners too. That's how PPMap maps itself — through personal invitations in networks of trust.
-                        </p>
+                        <p className="modal-hint">Shown on the pending node so multiple invites stay distinct. Never sent to the server.</p>
                     </section>
                 </>
             ) : (
